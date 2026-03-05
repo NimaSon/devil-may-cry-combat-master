@@ -1,0 +1,114 @@
+import 'package:flutter/material.dart';
+import 'currency_data.dart';
+
+class CryptoScreen extends StatefulWidget {
+  const CryptoScreen({super.key});
+
+  @override
+  State<CryptoScreen> createState() => _CryptoScreenState();
+}
+
+class _CryptoScreenState extends State<CryptoScreen> {
+  String _searchQuery = '';
+
+  List<MapEntry<String, Map<String, dynamic>>> _filterCrypto() {
+    return worldCrypto.entries.where((entry) {
+      return entry.value['name'].toString().toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          entry.key.toLowerCase().contains(_searchQuery.toLowerCase());
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filteredCrypto = _filterCrypto();
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              onChanged: (value) => setState(() => _searchQuery = value),
+              decoration: InputDecoration(
+                hintText: 'Поиск',
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: Colors.grey[200],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              children: filteredCrypto.map((entry) {
+                final code = entry.key;
+                final crypto = entry.value;
+                return Container(
+                  color: Colors.white,
+                  margin: const EdgeInsets.only(bottom: 1),
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 50,
+                        height: 50,
+                        decoration: const BoxDecoration(
+                          color: Colors.orange,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            crypto['symbol'],
+                            style: const TextStyle(fontSize: 24, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              code,
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              crypto['name'],
+                              style: const TextStyle(fontSize: 14, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            crypto['price'],
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            crypto['change'],
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: crypto['isUp'] ? Colors.green : Colors.red,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
