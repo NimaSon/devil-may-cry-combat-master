@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'currency_data.dart';
+import 'translations.dart';
 
 class ConverterScreen extends StatefulWidget {
-  const ConverterScreen({super.key});
+  final String selectedLanguage;
+
+  const ConverterScreen({super.key, required this.selectedLanguage});
 
   @override
   State<ConverterScreen> createState() => _ConverterScreenState();
@@ -28,6 +31,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
       MaterialPageRoute(
         builder: (context) => ConverterEditScreen(
           favoriteCurrencies: favoriteConverterCurrencies,
+          selectedLanguage: widget.selectedLanguage,
         ),
       ),
     );
@@ -72,18 +76,15 @@ class _ConverterScreenState extends State<ConverterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text('Конвертер валют', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: Text(tr('converter', widget.selectedLanguage), style: const TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit, color: Colors.black),
+            icon: const Icon(Icons.edit),
             onPressed: _openEditScreen,
           ),
           IconButton(
-            icon: const Icon(Icons.share, color: Colors.black),
+            icon: const Icon(Icons.share),
             onPressed: () {},
           ),
         ],
@@ -95,7 +96,6 @@ class _ConverterScreenState extends State<ConverterScreen> {
             if (currency == null) return const SizedBox();
             
             return Container(
-              color: Colors.white,
               margin: const EdgeInsets.only(bottom: 1),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
@@ -136,10 +136,12 @@ class _ConverterScreenState extends State<ConverterScreen> {
 
 class ConverterEditScreen extends StatefulWidget {
   final List<String> favoriteCurrencies;
+  final String selectedLanguage;
 
   const ConverterEditScreen({
     super.key,
     required this.favoriteCurrencies,
+    required this.selectedLanguage,
   });
 
   @override
@@ -178,13 +180,10 @@ class _ConverterEditScreenState extends State<ConverterEditScreen> with SingleTi
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text('Изменение избранного', style: TextStyle(color: Colors.black)),
+        title: Text(tr('changeFavorites', widget.selectedLanguage)),
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black),
+          icon: const Icon(Icons.close),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
@@ -192,7 +191,7 @@ class _ConverterEditScreenState extends State<ConverterEditScreen> with SingleTi
             onPressed: () {
               Navigator.pop(context, _favoriteCurrencies);
             },
-            child: const Text('Готово', style: TextStyle(fontSize: 16)),
+            child: Text(tr('done', widget.selectedLanguage), style: const TextStyle(fontSize: 16)),
           ),
         ],
         bottom: PreferredSize(
@@ -201,24 +200,19 @@ class _ConverterEditScreenState extends State<ConverterEditScreen> with SingleTi
             children: [
               TabBar(
                 controller: _tabController,
-                labelColor: Colors.blue,
-                unselectedLabelColor: Colors.grey,
-                indicatorColor: Colors.blue,
-                tabs: const [
-                  Tab(text: 'Избранное'),
-                  Tab(text: 'Все'),
+                tabs: [
+                  Tab(text: tr('favorites', widget.selectedLanguage)),
+                  Tab(text: tr('all', widget.selectedLanguage)),
                 ],
               ),
               Container(
-                color: Colors.white,
                 padding: const EdgeInsets.all(12),
                 child: TextField(
                   onChanged: (value) => setState(() => _searchQuery = value),
                   decoration: InputDecoration(
-                    hintText: 'Поиск',
+                    hintText: tr('search', widget.selectedLanguage),
                     prefixIcon: const Icon(Icons.search),
                     filled: true,
-                    fillColor: Colors.grey[200],
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -276,19 +270,15 @@ class _ConverterEditScreenState extends State<ConverterEditScreen> with SingleTi
   }
 
   Widget _buildCurrencyItem(String flag, String code, String name, bool isFavorite) {
-    return Container(
-      color: Colors.white,
-      margin: const EdgeInsets.only(bottom: 1),
-      child: ListTile(
-        leading: Text(flag, style: const TextStyle(fontSize: 32)),
-        title: Text(name, style: const TextStyle(fontSize: 16)),
-        trailing: IconButton(
-          icon: Icon(
-            isFavorite ? Icons.star : Icons.star_border,
-            color: isFavorite ? Colors.blue : Colors.grey,
-          ),
-          onPressed: () => _toggleFavorite(code),
+    return ListTile(
+      leading: Text(flag, style: const TextStyle(fontSize: 32)),
+      title: Text(name, style: const TextStyle(fontSize: 16)),
+      trailing: IconButton(
+        icon: Icon(
+          isFavorite ? Icons.star : Icons.star_border,
+          color: isFavorite ? Colors.blue : Colors.grey,
         ),
+        onPressed: () => _toggleFavorite(code),
       ),
     );
   }

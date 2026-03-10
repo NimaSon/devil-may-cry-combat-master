@@ -2,13 +2,31 @@ import 'package:flutter/material.dart';
 import 'currency_data.dart';
 import 'converter_screen.dart';
 import 'crypto_screen.dart';
+import 'other_screen.dart';
+import 'country_selection_screen.dart';
+import 'currency_service.dart';
+import 'translations.dart';
+import 'exchangers_screen.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool isDarkMode = false;
+
+  void toggleTheme() {
+    setState(() {
+      isDarkMode = !isDarkMode;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,16 +34,26 @@ class MyApp extends StatelessWidget {
       title: 'Конвертер Валют',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        brightness: Brightness.light,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.light),
         useMaterial3: true,
       ),
-      home: const MainScreen(),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.dark),
+        useMaterial3: true,
+      ),
+      themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      home: MainScreen(onThemeToggle: toggleTheme, isDarkMode: isDarkMode),
     );
   }
 }
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final VoidCallback onThemeToggle;
+  final bool isDarkMode;
+
+  const MainScreen({super.key, required this.onThemeToggle, required this.isDarkMode});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -33,11 +61,27 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
+  String selectedCountry = 'KZT';
+  String selectedLanguage = 'ru';
+  Map<String, double> exchangeRates = {};
   List<String> favoriteCurrencies = ['USD', 'EUR', 'RUB'];
   List<String> favoriteCrypto = ['BTC'];
 
   final allCurrencies = worldCurrencies;
   final allCrypto = worldCrypto;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRates();
+  }
+
+  Future<void> _loadRates() async {
+    final rates = await CurrencyService.fetchRates(selectedCountry);
+    setState(() {
+      exchangeRates = rates;
+    });
+  }
 
   void _openEditScreen() async {
     final result = await Navigator.push(
@@ -63,10 +107,28 @@ class _MainScreenState extends State<MainScreen> {
     switch (_selectedIndex) {
       case 0:
         return _buildHomeScreen();
+      case 1:
+        return ExchangersScreen(selectedLanguage: selectedLanguage);
       case 2:
         return const CryptoScreen();
       case 3:
-        return const ConverterScreen();
+        return ConverterScreen(selectedLanguage: selectedLanguage);
+      case 4:
+        return OtherScreen(
+          selectedCountry: selectedCountry,
+          selectedLanguage: selectedLanguage,
+          onCountryChanged: (country) {
+            setState(() {
+              selectedCountry = country;
+            });
+            _loadRates();
+          },
+          onLanguageChanged: (language) {
+            setState(() {
+              selectedLanguage = language;
+            });
+          },
+        );
       default:
         return Center(child: Text('Страница ${_selectedIndex + 1}'));
     }
@@ -75,20 +137,17 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       body: SafeArea(child: _getScreen()),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) => setState(() => _selectedIndex = index),
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Главная'),
-          BottomNavigationBarItem(icon: Icon(Icons.swap_horiz), label: 'Обменники'),
-          BottomNavigationBarItem(icon: Icon(Icons.currency_bitcoin), label: 'Криптовалюта'),
-          BottomNavigationBarItem(icon: Icon(Icons.calculate), label: 'Конвертер'),
-          BottomNavigationBarItem(icon: Icon(Icons.more_horiz), label: 'Другое'),
+        items: [
+          BottomNavigationBarItem(icon: const Icon(Icons.home), label: tr('home', selectedLanguage)),
+          BottomNavigationBarItem(icon: const Icon(Icons.swap_horiz), label: tr('exchangers', selectedLanguage)),
+          BottomNavigationBarItem(icon: const Icon(Icons.currency_bitcoin), label: tr('crypto', selectedLanguage)),
+          BottomNavigationBarItem(icon: const Icon(Icons.calculate), label: tr('converter', selectedLanguage)),
+          BottomNavigationBarItem(icon: const Icon(Icons.more_horiz), label: tr('other', selectedLanguage)),
         ],
       ),
     );
@@ -100,30 +159,52 @@ class _MainScreenState extends State<MainScreen> {
       children: [
         Row(
           children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(colors: [Color(0xFF00BFFF), Color(0xFF1E90FF)]),
+            GestureDetector(
+              onTap: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CountrySelectionScreen(selectedCountry: selectedCountry),
+                  ),
+                );
+                if (result != null) {
+                  setState(() {
+                    selectedCountry = result;
+                  });
+                  _loadRates();
+                }
+              },
+              child: Container(
+                width: 50,
+                height: 50,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(colors: [Color(0xFF00BFFF), Color(0xFF1E90FF)]),
+                ),
+                child: const Icon(Icons.flag, color: Colors.white),
               ),
-              child: const Icon(Icons.flag, color: Colors.white),
             ),
             const SizedBox(width: 12),
-            const Text('Главная', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+            Text(tr('home', selectedLanguage), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
             const Spacer(),
-            TextButton(onPressed: _openEditScreen, child: const Text('Изменить')),
+            IconButton(
+              icon: Icon(widget.isDarkMode ? Icons.light_mode : Icons.dark_mode),
+              onPressed: widget.onThemeToggle,
+            ),
+            TextButton(onPressed: _openEditScreen, child: Text(tr('edit', selectedLanguage))),
           ],
         ),
         const SizedBox(height: 24),
-        const Text('Курсы валют', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        Text(tr('currencyRates', selectedLanguage), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
         ...favoriteCurrencies.map((code) {
           final currency = allCurrencies[code]!;
-          return _buildCurrencyCard(currency['flag'], code, currency['price'], currency['change'], currency['isUp']);
+          final rate = exchangeRates[code];
+          final price = rate != null ? '${(1 / rate).toStringAsFixed(2)}' : currency['price'];
+          return _buildCurrencyCard(currency['flag'], code, price, currency['change'], currency['isUp']);
         }),
         const SizedBox(height: 24),
-        const Text('Криптовалюта', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        Text(tr('crypto', selectedLanguage), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
         ...favoriteCrypto.map((code) {
           final crypto = allCrypto[code]!;
@@ -138,7 +219,7 @@ class _MainScreenState extends State<MainScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -164,7 +245,7 @@ class _MainScreenState extends State<MainScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -261,13 +342,10 @@ class _EditCurrenciesScreenState extends State<EditCurrenciesScreen> with Single
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text('Изменение избранного', style: TextStyle(color: Colors.black)),
+        title: Text(tr('changeFavorites', 'ru')),
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black),
+          icon: const Icon(Icons.close),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
@@ -278,7 +356,7 @@ class _EditCurrenciesScreenState extends State<EditCurrenciesScreen> with Single
                 'crypto': _favoriteCrypto,
               });
             },
-            child: const Text('Готово', style: TextStyle(fontSize: 16)),
+            child: Text(tr('done', 'ru'), style: const TextStyle(fontSize: 16)),
           ),
         ],
         bottom: PreferredSize(
@@ -287,24 +365,19 @@ class _EditCurrenciesScreenState extends State<EditCurrenciesScreen> with Single
             children: [
               TabBar(
                 controller: _tabController,
-                labelColor: Colors.blue,
-                unselectedLabelColor: Colors.grey,
-                indicatorColor: Colors.blue,
-                tabs: const [
-                  Tab(text: 'Избранное'),
-                  Tab(text: 'Все'),
+                tabs: [
+                  Tab(text: tr('favorites', 'ru')),
+                  Tab(text: tr('all', 'ru')),
                 ],
               ),
               Container(
-                color: Colors.white,
                 padding: const EdgeInsets.all(12),
                 child: TextField(
                   onChanged: (value) => setState(() => _searchQuery = value),
                   decoration: InputDecoration(
-                    hintText: 'Поиск',
+                    hintText: tr('search', 'ru'),
                     prefixIcon: const Icon(Icons.search),
                     filled: true,
-                    fillColor: Colors.grey[200],
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -330,9 +403,9 @@ class _EditCurrenciesScreenState extends State<EditCurrenciesScreen> with Single
     return ListView(
       children: [
         if (_favoriteCurrencies.isNotEmpty) ...[
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: Text('Курсы валют', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(tr('currencyRates', 'ru'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           ),
           ..._favoriteCurrencies.map((code) {
             final currency = widget.allCurrencies[code]!;
@@ -340,9 +413,9 @@ class _EditCurrenciesScreenState extends State<EditCurrenciesScreen> with Single
           }),
         ],
         if (_favoriteCrypto.isNotEmpty) ...[
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: Text('Криптовалюта', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(tr('crypto', 'ru'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           ),
           ..._favoriteCrypto.map((code) {
             final crypto = widget.allCrypto[code]!;
@@ -384,45 +457,37 @@ class _EditCurrenciesScreenState extends State<EditCurrenciesScreen> with Single
   }
 
   Widget _buildCurrencyItem(String flag, String code, String name, bool isFavorite, bool isCrypto) {
-    return Container(
-      color: Colors.white,
-      margin: const EdgeInsets.only(bottom: 1),
-      child: ListTile(
-        leading: Text(flag, style: const TextStyle(fontSize: 32)),
-        title: Text(name, style: const TextStyle(fontSize: 16)),
-        trailing: IconButton(
-          icon: Icon(
-            isFavorite ? Icons.star : Icons.star_border,
-            color: isFavorite ? Colors.blue : Colors.grey,
-          ),
-          onPressed: () => _toggleFavorite(code, isCrypto),
+    return ListTile(
+      leading: Text(flag, style: const TextStyle(fontSize: 32)),
+      title: Text(name, style: const TextStyle(fontSize: 16)),
+      trailing: IconButton(
+        icon: Icon(
+          isFavorite ? Icons.star : Icons.star_border,
+          color: isFavorite ? Colors.blue : Colors.grey,
         ),
+        onPressed: () => _toggleFavorite(code, isCrypto),
       ),
     );
   }
 
   Widget _buildCryptoItem(String symbol, String code, String name, bool isFavorite, bool isCrypto) {
-    return Container(
-      color: Colors.white,
-      margin: const EdgeInsets.only(bottom: 1),
-      child: ListTile(
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: const BoxDecoration(
-            color: Colors.orange,
-            shape: BoxShape.circle,
-          ),
-          child: Center(child: Text(symbol, style: const TextStyle(fontSize: 20, color: Colors.white))),
+    return ListTile(
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: const BoxDecoration(
+          color: Colors.orange,
+          shape: BoxShape.circle,
         ),
-        title: Text(name, style: const TextStyle(fontSize: 16)),
-        trailing: IconButton(
-          icon: Icon(
-            isFavorite ? Icons.star : Icons.star_border,
-            color: isFavorite ? Colors.blue : Colors.grey,
-          ),
-          onPressed: () => _toggleFavorite(code, isCrypto),
+        child: Center(child: Text(symbol, style: const TextStyle(fontSize: 20, color: Colors.white))),
+      ),
+      title: Text(name, style: const TextStyle(fontSize: 16)),
+      trailing: IconButton(
+        icon: Icon(
+          isFavorite ? Icons.star : Icons.star_border,
+          color: isFavorite ? Colors.blue : Colors.grey,
         ),
+        onPressed: () => _toggleFavorite(code, isCrypto),
       ),
     );
   }

@@ -2,11 +2,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class CurrencyService {
-  static const String apiUrl = 'https://api.exchangerate-api.com/v4/latest/KZT';
-
-  static Future<Map<String, double>> fetchRates() async {
+  static Future<Map<String, double>> fetchRates(String baseCurrency) async {
     try {
-      final response = await http.get(Uri.parse(apiUrl));
+      final response = await http.get(Uri.parse('https://api.exchangerate-api.com/v4/latest/$baseCurrency'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final rates = data['rates'] as Map<String, dynamic>;
@@ -14,16 +12,15 @@ class CurrencyService {
       }
       return {};
     } catch (e) {
-      print('Error fetching rates: $e');
       return {};
     }
   }
 
-  static String formatPrice(double rate) {
-    if (rate >= 1) {
-      return '${(1 / rate).toStringAsFixed(2)} ₸';
-    } else {
-      return '${(1 / rate).toStringAsFixed(2)} ₸';
-    }
+  static String getCurrencySymbol(String code) {
+    const symbols = {
+      'KZT': '₸', 'RUB': '₽', 'AZN': '₼', 'MDL': 'L', 'MNT': '₮',
+      'KGS': 'с', 'RON': 'lei', 'UAH': '₴', 'PLN': 'zł', 'GEL': '₾', 'AMD': '֏'
+    };
+    return symbols[code] ?? code;
   }
 }

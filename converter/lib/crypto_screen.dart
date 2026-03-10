@@ -23,11 +23,9 @@ class _CryptoScreenState extends State<CryptoScreen> {
     final filteredCrypto = _filterCrypto();
 
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Column(
         children: [
           Container(
-            color: Colors.white,
             padding: const EdgeInsets.all(16),
             child: TextField(
               onChanged: (value) => setState(() => _searchQuery = value),
@@ -35,7 +33,6 @@ class _CryptoScreenState extends State<CryptoScreen> {
                 hintText: 'Поиск',
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
-                fillColor: Colors.grey[200],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -49,7 +46,6 @@ class _CryptoScreenState extends State<CryptoScreen> {
                 final code = entry.key;
                 final crypto = entry.value;
                 return Container(
-                  color: Colors.white,
                   margin: const EdgeInsets.only(bottom: 1),
                   padding: const EdgeInsets.all(16),
                   child: Row(
