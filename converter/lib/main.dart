@@ -126,17 +126,21 @@ class _MainScreenState extends State<MainScreen> {
           aiuBankRates: aiuBankRates,
           onRatesUpdate: (newRates) {
             setState(() {
+              aiuBankRates = newRates;
               rateHistory.insert(0, {
                 'date': DateTime.now(),
-                'rates': List<Map<String, String>>.from(aiuBankRates),
+                'rates': List<Map<String, String>>.from(newRates),
               });
-              aiuBankRates = newRates;
             });
           },
         );
       case 2:
         return isLoggedIn && isLegalEntity
-            ? const TradingChartScreen()
+            ? TradingChartScreen(
+                selectedLanguage: selectedLanguage,
+                aiuBankRates: aiuBankRates,
+                rateHistory: rateHistory,
+              )
             : const CryptoScreen();
       case 3:
         return ConverterScreen(selectedLanguage: selectedLanguage);
@@ -173,11 +177,11 @@ class _MainScreenState extends State<MainScreen> {
           },
           onRatesUpdate: (newRates) {
             setState(() {
+              aiuBankRates = newRates;
               rateHistory.insert(0, {
                 'date': DateTime.now(),
-                'rates': List<Map<String, String>>.from(aiuBankRates),
+                'rates': List<Map<String, String>>.from(newRates),
               });
-              aiuBankRates = newRates;
             });
           },
         );

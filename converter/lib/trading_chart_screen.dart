@@ -2,7 +2,16 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 
 class TradingChartScreen extends StatefulWidget {
-  const TradingChartScreen({super.key});
+  final String selectedLanguage;
+  final List<Map<String, String>> aiuBankRates;
+  final List<Map<String, dynamic>> rateHistory;
+
+  const TradingChartScreen({
+    super.key,
+    required this.selectedLanguage,
+    required this.aiuBankRates,
+    required this.rateHistory,
+  });
 
   @override
   State<TradingChartScreen> createState() => _TradingChartScreenState();
@@ -12,14 +21,52 @@ class _TradingChartScreenState extends State<TradingChartScreen> {
   String selectedCurrency = 'USD';
   String selectedPeriod = '1Д';
 
-  final Map<String, List<double>> chartData = {
-    'USD': [480, 482, 481, 485, 483, 487, 488, 486, 489, 490, 488, 492, 491, 489, 488],
-    'EUR': [558, 560, 562, 561, 565, 563, 568, 566, 570, 569, 567, 571, 570, 568, 569],
-    'RUB': [5.9, 6.0, 5.95, 6.1, 6.05, 6.2, 6.15, 6.3, 6.25, 6.4, 6.35, 6.3, 6.4, 6.38, 6.4],
-  };
+  Map<String, bool> _getCurrencyTrends() {
+    Map<String, bool> trends = {};
+    
+    final currencies = ['USD', 'EUR', 'RUB'];
+    for (int i = 0; i < currencies.length; i++) {
+      final currentBuy = double.tryParse(widget.aiuBankRates[i]['buy']!.replaceAll(',', '.')) ?? 0;
+      final currentSell = double.tryParse(widget.aiuBankRates[i]['sell']!.replaceAll(',', '.')) ?? 0;
+      
+      trends[currencies[i]] = currentSell >= currentBuy;
+    }
+    
+    return trends;
+  }
+
+  List<double> _generateChartData(String currency, bool isUp) {
+    final index = currency == 'USD' ? 0 : currency == 'EUR' ? 1 : 2;
+    final currentBuy = double.tryParse(widget.aiuBankRates[index]['buy']!.replaceAll(',', '.')) ?? 0;
+    final currentSell = double.tryParse(widget.aiuBankRates[index]['sell']!.replaceAll(',', '.')) ?? 0;
+    
+    List<double> data = [];
+    if (isUp) {
+      for (int i = 0; i < 15; i++) {
+        final progress = i / 14;
+        data.add(currentBuy + (currentSell - currentBuy) * progress);
+      }
+    } else {
+      for (int i = 0; i < 15; i++) {
+        final progress = i / 14;
+        data.add(currentBuy - (currentBuy - currentSell) * progress);
+      }
+    }
+    return data;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final trends = _getCurrencyTrends();
+    final isUp = trends[selectedCurrency] ?? true;
+    final chartColor = isUp ? const Color(0xFF00C853) : const Color(0xFFFF1744);
+    final chartDataForCurrency = _generateChartData(selectedCurrency, isUp);
+    
+    final index = selectedCurrency == 'USD' ? 0 : selectedCurrency == 'EUR' ? 1 : 2;
+    final currentBuy = double.tryParse(widget.aiuBankRates[index]['buy']!.replaceAll(',', '.')) ?? 0;
+    final currentSell = double.tryParse(widget.aiuBankRates[index]['sell']!.replaceAll(',', '.')) ?? 0;
+    final changeValue = (currentSell - currentBuy).abs();
+    final change = currentSell >= currentBuy ? '+' : '-';
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -50,8 +97,10 @@ class _TradingChartScreenState extends State<TradingChartScreen> {
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF00C853), Color(0xFF00E676)],
+                  gradient: LinearGradient(
+                    colors: isUp 
+                      ? [const Color(0xFF00C853), const Color(0xFF00E676)]
+                      : [const Color(0xFFFF1744), const Color(0xFFFF5252)],
                   ),
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -64,15 +113,15 @@ class _TradingChartScreenState extends State<TradingChartScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '${chartData[selectedCurrency]!.last.toStringAsFixed(2)} ₸',
+                      '${currentSell.toStringAsFixed(1)} ₸',
                       style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(Icons.arrow_upward, color: Colors.white, size: 16),
+                        Icon(isUp ? Icons.arrow_upward : Icons.arrow_downward, color: Colors.white, size: 16),
                         Text(
-                          '+${(chartData[selectedCurrency]!.last - chartData[selectedCurrency]!.first).toStringAsFixed(2)} ₸',
+                          '$change${changeValue.toStringAsFixed(2)} ₸',
                           style: const TextStyle(fontSize: 16, color: Colors.white),
                         ),
                       ],
@@ -102,8 +151,8 @@ class _TradingChartScreenState extends State<TradingChartScreen> {
                 padding: const EdgeInsets.all(16),
                 child: CustomPaint(
                   painter: ChartPainter(
-                    data: chartData[selectedCurrency]!,
-                    color: const Color(0xFF00C853),
+                    data: chartDataForCurrency,
+                    color: chartColor,
                   ),
                   child: Container(),
                 ),
@@ -116,6 +165,8 @@ class _TradingChartScreenState extends State<TradingChartScreen> {
   }
 
   Widget _buildCurrencyChip(String currency, String flag) {
+    final trends = _getCurrencyTrends();
+    final isUp = trends[currency] ?? true;
     final isSelected = selectedCurrency == currency;
     return GestureDetector(
       onTap: () {
@@ -126,7 +177,9 @@ class _TradingChartScreenState extends State<TradingChartScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.green : Colors.grey[200],
+          color: isSelected 
+            ? (isUp ? Colors.green : Colors.red) 
+            : Colors.grey[200],
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
