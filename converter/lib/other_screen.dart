@@ -3,6 +3,7 @@ import 'settings_screen.dart';
 import 'translations.dart';
 import 'login_screen.dart';
 import 'my_exchanger_screen.dart';
+import 'rate_history_screen.dart';
 
 class OtherScreen extends StatelessWidget {
   final String selectedCountry;
@@ -15,6 +16,7 @@ class OtherScreen extends StatelessWidget {
   final VoidCallback onLogout;
   final List<Map<String, String>> aiuBankRates;
   final Function(List<Map<String, String>>) onRatesUpdate;
+  final List<Map<String, dynamic>> rateHistory;
 
   const OtherScreen({
     super.key,
@@ -28,6 +30,7 @@ class OtherScreen extends StatelessWidget {
     required this.onLogout,
     required this.aiuBankRates,
     required this.onRatesUpdate,
+    required this.rateHistory,
   });
 
   @override
@@ -65,6 +68,15 @@ class OtherScreen extends StatelessWidget {
                     aiuBankRates: aiuBankRates,
                     onRatesUpdate: onRatesUpdate,
                   ),
+                ),
+              );
+            }),
+          if (isLoggedIn && isLegalEntity)
+            _buildMenuItem(Icons.history, 'История изменения курсов', () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => RateHistoryScreen(history: rateHistory),
                 ),
               );
             }),

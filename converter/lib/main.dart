@@ -7,6 +7,7 @@ import 'country_selection_screen.dart';
 import 'currency_service.dart';
 import 'translations.dart';
 import 'exchangers_screen.dart';
+import 'trading_chart_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -74,6 +75,8 @@ class _MainScreenState extends State<MainScreen> {
     {'flag': '🇪🇺', 'buy': '558', 'sell': '568'},
     {'flag': '🇷🇺', 'buy': '5,9', 'sell': '6,4'},
   ];
+  
+  List<Map<String, dynamic>> rateHistory = [];
 
   final allCurrencies = worldCurrencies;
   final allCrypto = worldCrypto;
@@ -123,12 +126,18 @@ class _MainScreenState extends State<MainScreen> {
           aiuBankRates: aiuBankRates,
           onRatesUpdate: (newRates) {
             setState(() {
+              rateHistory.insert(0, {
+                'date': DateTime.now(),
+                'rates': List<Map<String, String>>.from(aiuBankRates),
+              });
               aiuBankRates = newRates;
             });
           },
         );
       case 2:
-        return const CryptoScreen();
+        return isLoggedIn && isLegalEntity
+            ? const TradingChartScreen()
+            : const CryptoScreen();
       case 3:
         return ConverterScreen(selectedLanguage: selectedLanguage);
       case 4:
@@ -138,6 +147,7 @@ class _MainScreenState extends State<MainScreen> {
           isLoggedIn: isLoggedIn,
           isLegalEntity: isLegalEntity,
           aiuBankRates: aiuBankRates,
+          rateHistory: rateHistory,
           onCountryChanged: (country) {
             setState(() {
               selectedCountry = country;
@@ -163,6 +173,10 @@ class _MainScreenState extends State<MainScreen> {
           },
           onRatesUpdate: (newRates) {
             setState(() {
+              rateHistory.insert(0, {
+                'date': DateTime.now(),
+                'rates': List<Map<String, String>>.from(aiuBankRates),
+              });
               aiuBankRates = newRates;
             });
           },
@@ -183,7 +197,10 @@ class _MainScreenState extends State<MainScreen> {
         items: [
           BottomNavigationBarItem(icon: const Icon(Icons.home), label: tr('home', selectedLanguage)),
           BottomNavigationBarItem(icon: const Icon(Icons.swap_horiz), label: tr('exchangers', selectedLanguage)),
-          BottomNavigationBarItem(icon: const Icon(Icons.currency_bitcoin), label: tr('crypto', selectedLanguage)),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.currency_bitcoin),
+            label: isLoggedIn && isLegalEntity ? 'График торгов' : tr('crypto', selectedLanguage),
+          ),
           BottomNavigationBarItem(icon: const Icon(Icons.calculate), label: tr('converter', selectedLanguage)),
           BottomNavigationBarItem(icon: const Icon(Icons.more_horiz), label: tr('other', selectedLanguage)),
         ],
