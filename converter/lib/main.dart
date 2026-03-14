@@ -36,14 +36,58 @@ class _MyAppState extends State<MyApp> {
       title: 'Конвертер Валют',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        brightness: Brightness.light,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.light),
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF0D1B2A),
+        cardColor: Colors.white.withValues(alpha: 0.08),
         useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.dark),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+          iconTheme: IconThemeData(color: Colors.white),
+        ),
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          backgroundColor: Colors.black.withValues(alpha: 0.7),
+          selectedItemColor: const Color(0xFF42A5F5),
+          unselectedItemColor: Colors.white54,
+          type: BottomNavigationBarType.fixed,
+          elevation: 0,
+        ),
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(color: Colors.white),
+          bodyMedium: TextStyle(color: Colors.white70),
+          titleLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white70),
       ),
       darkTheme: ThemeData(
         brightness: Brightness.dark,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.dark),
+        scaffoldBackgroundColor: const Color(0xFF0D1B2A),
+        cardColor: Colors.white.withValues(alpha: 0.08),
         useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.dark),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+          iconTheme: IconThemeData(color: Colors.white),
+        ),
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          backgroundColor: Colors.black.withValues(alpha: 0.7),
+          selectedItemColor: const Color(0xFF42A5F5),
+          unselectedItemColor: Colors.white54,
+          type: BottomNavigationBarType.fixed,
+          elevation: 0,
+        ),
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(color: Colors.white),
+          bodyMedium: TextStyle(color: Colors.white70),
+          titleLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white70),
       ),
       themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
       home: MainScreen(onThemeToggle: toggleTheme, isDarkMode: isDarkMode),
@@ -243,10 +287,26 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
+  Widget _wrapWithBg(Widget child) {
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Image.asset('assets/images/bg.png', fit: BoxFit.cover),
+        ),
+        Positioned.fill(
+          child: Container(color: Colors.black.withValues(alpha: 0.45)),
+        ),
+        child,
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(child: _getScreen()),
+      backgroundColor: const Color(0xFF0D1B2A),
+      extendBody: true,
+      body: _wrapWithBg(SafeArea(child: _getScreen())),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) => setState(() => _selectedIndex = index),
@@ -340,8 +400,9 @@ class _MainScreenState extends State<MainScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            Text(tr('home', selectedLanguage), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+            Text(tr('home', selectedLanguage), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
             const Spacer(),
+
             IconButton(
               icon: Icon(widget.isDarkMode ? Icons.light_mode : Icons.dark_mode),
               onPressed: widget.onThemeToggle,
@@ -350,7 +411,7 @@ class _MainScreenState extends State<MainScreen> {
           ],
         ),
         const SizedBox(height: 24),
-        Text(tr('currencyRates', selectedLanguage), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        Text(tr('currencyRates', selectedLanguage), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
         const SizedBox(height: 12),
         ...favoriteCurrencies.map((code) {
           final currency = allCurrencies[code]!;
@@ -359,7 +420,7 @@ class _MainScreenState extends State<MainScreen> {
           return _buildCurrencyCard(currency['flag'], code, price, currency['change'], currency['isUp']);
         }),
         const SizedBox(height: 24),
-        Text(tr('crypto', selectedLanguage), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        Text(tr('crypto', selectedLanguage), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
         const SizedBox(height: 12),
         ...favoriteCrypto.map((code) {
           final crypto = allCrypto[code]!;
@@ -374,20 +435,21 @@ class _MainScreenState extends State<MainScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
       ),
       child: Row(
         children: [
           Text(flag, style: const TextStyle(fontSize: 40)),
           const SizedBox(width: 16),
-          Text(code, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(code, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
           const Spacer(),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(price, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              Text(change, style: TextStyle(fontSize: 14, color: isUp ? Colors.green : Colors.red)),
+              Text(price, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+              Text(change, style: TextStyle(fontSize: 14, color: isUp ? const Color(0xFF4CAF50) : const Color(0xFFEF5350))),
             ],
           ),
         ],
@@ -400,8 +462,9 @@ class _MainScreenState extends State<MainScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
       ),
       child: Row(
         children: [
@@ -415,13 +478,13 @@ class _MainScreenState extends State<MainScreen> {
             child: Center(child: Text(symbol, style: const TextStyle(fontSize: 24, color: Colors.white))),
           ),
           const SizedBox(width: 16),
-          Text(code, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(code, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
           const Spacer(),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(price, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              Text(change, style: TextStyle(fontSize: 14, color: isUp ? Colors.green : Colors.red)),
+              Text(price, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+              Text(change, style: TextStyle(fontSize: 14, color: isUp ? const Color(0xFF4CAF50) : const Color(0xFFEF5350))),
             ],
           ),
         ],

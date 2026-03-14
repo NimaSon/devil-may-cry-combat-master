@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'translations.dart';
 import 'rate_management_screen.dart';
 
+import 'app_background.dart';
+
 class ExchangersScreen extends StatefulWidget {
   final String selectedLanguage;
   final bool isLoggedIn;
@@ -28,14 +30,14 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
   final List<Map<String, dynamic>> banks = [
     {
       'name': 'Aiu Bank',
-      'icon': '🏛️',
+      'logo': 'images/aiu.jpg',
       'color': Color(0xFF00C853),
       'isOwn': true,
       'rates': [],
     },
     {
       'name': 'Halyk Bank',
-      'icon': '🏦',
+      'logo': 'images/halyk.jpeg',
       'color': Color(0xFF00A651),
       'rates': [
         {'flag': '🇺🇸', 'buy': '482,8', 'sell': '489,8'},
@@ -45,7 +47,8 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
     },
     {
       'name': 'Bank CenterCredit',
-      'icon': '🏦',
+      'logo': null,
+      'logo': 'images/bcc.webp',
       'color': Color(0xFFFF6B00),
       'rates': [
         {'flag': '🇺🇸', 'buy': '484,9', 'sell': '490,2'},
@@ -55,7 +58,7 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
     },
     {
       'name': 'ForteBank',
-      'icon': '🏦',
+      'logo': 'images/forte.webp',
       'color': Color(0xFFE30613),
       'rates': [
         {'flag': '🇺🇸', 'buy': '485', 'sell': '493'},
@@ -65,7 +68,7 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
     },
     {
       'name': 'Eurasian Bank',
-      'icon': '🏦',
+      'logo': 'images/eurasian.png',
       'color': Color(0xFF0066CC),
       'rates': [
         {'flag': '🇺🇸', 'buy': '483,5', 'sell': '491,5'},
@@ -75,7 +78,7 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
     },
     {
       'name': 'Kaspi Bank',
-      'icon': '🏦',
+      'logo': 'images/kaspi.png',
       'color': Color(0xFFFF0000),
       'rates': [
         {'flag': '🇺🇸', 'buy': '486', 'sell': '492'},
@@ -85,7 +88,8 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
     },
     {
       'name': 'Jusan Bank',
-      'icon': '🏦',
+      'logo': null,
+      'abbr': 'JB',
       'color': Color(0xFF00B956),
       'rates': [
         {'flag': '🇺🇸', 'buy': '484', 'sell': '490'},
@@ -95,7 +99,7 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
     },
     {
       'name': 'Bereke Bank',
-      'icon': '🏦',
+      'logo': 'images/bereke.jpg',
       'color': Color(0xFF1E88E5),
       'rates': [
         {'flag': '🇺🇸', 'buy': '485,5', 'sell': '493,5'},
@@ -114,27 +118,31 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+    return AppBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
                 tr('exchangers', widget.selectedLanguage),
-                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
               ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: TextField(
                 onChanged: (value) => setState(() => _searchQuery = value),
+                style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   hintText: tr('search', widget.selectedLanguage),
-                  prefixIcon: const Icon(Icons.search),
+                  hintStyle: const TextStyle(color: Colors.white54),
+                  prefixIcon: const Icon(Icons.search, color: Colors.white54),
                   filled: true,
-                  fillColor: Colors.grey[200],
+                  fillColor: Colors.white.withValues(alpha: 0.08),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
                     borderSide: BorderSide.none,
@@ -157,6 +165,7 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
               ),
             ),
           ],
+          ),
         ),
       ),
     );
@@ -167,15 +176,9 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,17 +192,25 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
                   color: bank['color'],
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Center(
-                  child: Text(
-                    bank['icon'],
-                    style: const TextStyle(fontSize: 28),
-                  ),
-                ),
+                child: bank['logo'] != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.asset(
+                          bank['logo'],
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Center(
+                            child: Text(bank['abbr'] ?? bank['name'][0], style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                      )
+                    : Center(
+                        child: Text(bank['abbr'] ?? bank['icon'] ?? '🏛️', style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
               ),
               const SizedBox(width: 12),
               Text(
                 bank['name'],
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
               ),
             ],
           ),
@@ -209,14 +220,14 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
               Expanded(
                 child: Text(
                   'Покупка',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  style: const TextStyle(fontSize: 14, color: Colors.white54),
                 ),
               ),
               const SizedBox(width: 40),
               Expanded(
                 child: Text(
                   'Продажа',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  style: const TextStyle(fontSize: 14, color: Colors.white54),
                   textAlign: TextAlign.right,
                 ),
               ),
@@ -235,7 +246,7 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
                         const SizedBox(width: 8),
                         Text(
                           '${rate['buy']} ₸',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
                         ),
                       ],
                     ),
@@ -244,7 +255,7 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
                   Expanded(
                     child: Text(
                       '${rate['sell']} ₸',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
                       textAlign: TextAlign.right,
                     ),
                   ),

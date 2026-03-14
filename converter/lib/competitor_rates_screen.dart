@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_background.dart';
 
 class CompetitorRatesScreen extends StatefulWidget {
   final List<Map<String, String>> aiuBankRates;
@@ -144,30 +145,36 @@ class _CompetitorRatesScreenState extends State<CompetitorRatesScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Курсы конкурентов'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: '🇺🇸 USD'),
-            Tab(text: '🇪🇺 EUR'),
-            Tab(text: '🇷🇺 RUB'),
-          ],
+    return AppBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          title: const Text('Курсы конкурентов', style: TextStyle(color: Colors.white)),
+          iconTheme: const IconThemeData(color: Colors.white),
+          bottom: TabBar(
+            controller: _tabController,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white54,
+            indicatorColor: Colors.white,
+            tabs: const [
+              Tab(text: '🇺🇸 USD'),
+              Tab(text: '🇪🇺 EUR'),
+              Tab(text: '🇷🇺 RUB'),
+            ],
+          ),
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: ['USD', 'EUR', 'RUB'].map((currency) {
-          return _buildCurrencyTab(currency, isDark);
-        }).toList(),
+        body: TabBarView(
+          controller: _tabController,
+          children: ['USD', 'EUR', 'RUB'].map((currency) {
+            return _buildCurrencyTab(currency);
+          }).toList(),
+        ),
       ),
     );
   }
 
-  Widget _buildCurrencyTab(String currency, bool isDark) {
+  Widget _buildCurrencyTab(String currency) {
     final aiuBuy = _aiuBuy;
     final aiuSell = _aiuSell;
     final avgBuy = _avgMarketBuy;
@@ -242,23 +249,24 @@ class _CompetitorRatesScreenState extends State<CompetitorRatesScreen>
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isDark ? Colors.grey[850] : Colors.grey[100],
+            color: Colors.white.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
           ),
           child: Row(
             children: [
-              const Icon(Icons.bar_chart, size: 28, color: Colors.blueGrey),
+              const Icon(Icons.bar_chart, size: 28, color: Colors.white54),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text('Среднее по рынку',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.blueGrey)),
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white54)),
                     const SizedBox(height: 4),
                     Text(
                       'Покупка: ${avgBuy.toStringAsFixed(2)} ₸   •   Продажа: ${avgSell.toStringAsFixed(2)} ₸',
-                      style: const TextStyle(fontSize: 13),
+                      style: const TextStyle(fontSize: 13, color: Colors.white70),
                     ),
                   ],
                 ),
@@ -268,10 +276,10 @@ class _CompetitorRatesScreenState extends State<CompetitorRatesScreen>
         ),
         const SizedBox(height: 20),
 
-        const Text('Все банки', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const Text('Все банки', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
         const SizedBox(height: 4),
-        Text('Отсортировано по курсу продажи',
-            style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+        const Text('Отсортировано по курсу продажи',
+            style: TextStyle(fontSize: 12, color: Colors.white38)),
         const SizedBox(height: 12),
 
         // Aiu Bank в списке
@@ -357,7 +365,6 @@ class _CompetitorRatesScreenState extends State<CompetitorRatesScreen>
     required bool isOwn,
     required int rank,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final sellDiff = sell - avgSell;
     final isBetter = sellDiff <= 0;
 
@@ -366,22 +373,15 @@ class _CompetitorRatesScreenState extends State<CompetitorRatesScreen>
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isOwn
-            ? const Color(0xFF00C853).withValues(alpha: 0.08)
-            : (isDark ? Colors.grey[850] : Colors.white),
+            ? const Color(0xFF00C853).withValues(alpha: 0.15)
+            : Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
         border: isOwn
             ? Border.all(color: const Color(0xFF00C853), width: 1.5)
-            : Border.all(color: Colors.transparent),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-          ),
-        ],
+            : Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [
-          // Ранг
           SizedBox(
             width: 28,
             child: Text(
@@ -389,22 +389,20 @@ class _CompetitorRatesScreenState extends State<CompetitorRatesScreen>
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
-                color: rank == 1 ? const Color(0xFF00C853) : Colors.grey,
+                color: rank == 1 ? const Color(0xFF00C853) : Colors.white38,
               ),
             ),
           ),
-          // Иконка банка
           Container(
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
+              color: color.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Center(child: Text(icon, style: const TextStyle(fontSize: 22))),
           ),
           const SizedBox(width: 10),
-          // Название
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -413,6 +411,7 @@ class _CompetitorRatesScreenState extends State<CompetitorRatesScreen>
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: isOwn ? FontWeight.bold : FontWeight.w500,
+                      color: Colors.white,
                     )),
                 if (isOwn)
                   const Text('Ваш банк',
@@ -420,22 +419,20 @@ class _CompetitorRatesScreenState extends State<CompetitorRatesScreen>
               ],
             ),
           ),
-          // Покупка
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text('${buy.toStringAsFixed(1)} ₸',
-                  style: const TextStyle(fontSize: 13, color: Colors.blueGrey)),
-              const Text('покупка', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                  style: const TextStyle(fontSize: 13, color: Colors.white54)),
+              const Text('покупка', style: TextStyle(fontSize: 10, color: Colors.white38)),
             ],
           ),
           const SizedBox(width: 12),
-          // Продажа + индикатор
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text('${sell.toStringAsFixed(1)} ₸',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white)),
               Row(
                 children: [
                   Icon(
@@ -445,10 +442,7 @@ class _CompetitorRatesScreenState extends State<CompetitorRatesScreen>
                   ),
                   Text(
                     '${sellDiff.abs().toStringAsFixed(1)}',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: isBetter ? Colors.green : Colors.red,
-                    ),
+                    style: TextStyle(fontSize: 10, color: isBetter ? Colors.green : Colors.red),
                   ),
                 ],
               ),

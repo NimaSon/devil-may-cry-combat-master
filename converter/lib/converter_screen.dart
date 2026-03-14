@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'currency_data.dart';
 import 'translations.dart';
 
+import 'app_background.dart';
+
 class ConverterScreen extends StatefulWidget {
   final String selectedLanguage;
 
@@ -75,60 +77,60 @@ class _ConverterScreenState extends State<ConverterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(tr('converter', widget.selectedLanguage), style: const TextStyle(fontWeight: FontWeight.bold)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: _openEditScreen,
-          ),
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: ListView(
-        children: [
-          ...favoriteConverterCurrencies.map((code) {
-            final currency = worldCurrencies[code];
-            if (currency == null) return const SizedBox();
-            
-            return Container(
-              margin: const EdgeInsets.only(bottom: 1),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  Text(currency['flag'], style: const TextStyle(fontSize: 40)),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(code, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        Text(currency['name'], style: const TextStyle(fontSize: 14, color: Colors.grey)),
-                      ],
-                    ),
-                  ),
-                  SizedBox(
-                    width: 120,
-                    child: TextField(
-                      controller: controllers[code],
-                      keyboardType: TextInputType.number,
-                      textAlign: TextAlign.right,
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
+    return AppBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          title: Text(tr('converter', widget.selectedLanguage), style: const TextStyle(fontWeight: FontWeight.bold)),
+          actions: [
+            IconButton(icon: const Icon(Icons.edit), onPressed: _openEditScreen),
+            IconButton(icon: const Icon(Icons.share), onPressed: () {}),
+          ],
+        ),
+        body: ListView(
+          children: [
+            ...favoriteConverterCurrencies.map((code) {
+              final currency = worldCurrencies[code];
+              if (currency == null) return const SizedBox();
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                ),
+                child: Row(
+                  children: [
+                    Text(currency['flag'], style: const TextStyle(fontSize: 40)),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(code, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                          Text(currency['name'], style: const TextStyle(fontSize: 14, color: Colors.white54)),
+                        ],
                       ),
-                      onChanged: (value) => _updateAllFields(code, value),
                     ),
-                  ),
-                ],
-              ),
-            );
-          }),
-        ],
+                    SizedBox(
+                      width: 120,
+                      child: TextField(
+                        controller: controllers[code],
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                        decoration: const InputDecoration(border: InputBorder.none),
+                        onChanged: (value) => _updateAllFields(code, value),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ),
       ),
     );
   }

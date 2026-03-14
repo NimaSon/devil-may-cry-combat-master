@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'currency_data.dart';
 
+import 'app_background.dart';
+
 class CryptoScreen extends StatefulWidget {
   const CryptoScreen({super.key});
 
@@ -22,9 +24,11 @@ class _CryptoScreenState extends State<CryptoScreen> {
   Widget build(BuildContext context) {
     final filteredCrypto = _filterCrypto();
 
-    return Scaffold(
-      body: Column(
-        children: [
+    return AppBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Column(
+          children: [
           Container(
             padding: const EdgeInsets.all(16),
             child: TextField(
@@ -46,8 +50,13 @@ class _CryptoScreenState extends State<CryptoScreen> {
                 final code = entry.key;
                 final crypto = entry.value;
                 return Container(
-                  margin: const EdgeInsets.only(bottom: 1),
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                  ),
                   child: Row(
                     children: [
                       Container(
@@ -71,11 +80,11 @@ class _CryptoScreenState extends State<CryptoScreen> {
                           children: [
                             Text(
                               code,
-                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                             ),
                             Text(
                               crypto['name'],
-                              style: const TextStyle(fontSize: 14, color: Colors.grey),
+                              style: const TextStyle(fontSize: 14, color: Colors.white54),
                             ),
                           ],
                         ),
@@ -85,13 +94,13 @@ class _CryptoScreenState extends State<CryptoScreen> {
                         children: [
                           Text(
                             crypto['price'],
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                           Text(
                             crypto['change'],
                             style: TextStyle(
                               fontSize: 14,
-                              color: crypto['isUp'] ? Colors.green : Colors.red,
+                              color: crypto['isUp'] ? const Color(0xFF4CAF50) : const Color(0xFFEF5350),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -104,6 +113,7 @@ class _CryptoScreenState extends State<CryptoScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }
