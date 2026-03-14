@@ -9,6 +9,7 @@ import 'risk_service.dart';
 import 'competitor_rates_screen.dart';
 import 'stocks_screen.dart';
 import 'resources_screen.dart';
+import 'news_screen.dart';
 
 class OtherScreen extends StatelessWidget {
   final String selectedCountry;
@@ -55,6 +56,9 @@ class OtherScreen extends StatelessWidget {
             _buildMenuItem(Icons.show_chart, tr('tradingChart', selectedLanguage), () {
               onNavigateToChart();
             }),
+          _buildMenuItem(Icons.newspaper, 'Новости экономики', () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const NewsScreen()));
+          }),
           _buildMenuItem(Icons.trending_up, tr('stocks', selectedLanguage), () {
             Navigator.push(context, MaterialPageRoute(builder: (context) => const StocksScreen()));
           }),
