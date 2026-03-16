@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'translations.dart';
 import 'rate_management_screen.dart';
 
+import 'app_background.dart';
+
 class ExchangersScreen extends StatefulWidget {
   final String selectedLanguage;
   final bool isLoggedIn;
@@ -22,20 +24,23 @@ class ExchangersScreen extends StatefulWidget {
   State<ExchangersScreen> createState() => _ExchangersScreenState();
 }
 
+enum _FilterMode { none, bestBuy, bestSell }
+
 class _ExchangersScreenState extends State<ExchangersScreen> {
   String _searchQuery = '';
+  _FilterMode _filterMode = _FilterMode.none;
 
   final List<Map<String, dynamic>> banks = [
     {
       'name': 'Aiu Bank',
-      'icon': '🏛️',
+      'logo': 'images/aiu.jpg',
       'color': Color(0xFF00C853),
       'isOwn': true,
       'rates': [],
     },
     {
       'name': 'Halyk Bank',
-      'icon': '🏦',
+      'logo': 'images/halyk.jpeg',
       'color': Color(0xFF00A651),
       'rates': [
         {'flag': '🇺🇸', 'buy': '482,8', 'sell': '489,8'},
@@ -45,7 +50,8 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
     },
     {
       'name': 'Bank CenterCredit',
-      'icon': '🏦',
+      'logo': null,
+      'logo': 'images/bcc.webp',
       'color': Color(0xFFFF6B00),
       'rates': [
         {'flag': '🇺🇸', 'buy': '484,9', 'sell': '490,2'},
@@ -55,7 +61,7 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
     },
     {
       'name': 'ForteBank',
-      'icon': '🏦',
+      'logo': 'images/forte.webp',
       'color': Color(0xFFE30613),
       'rates': [
         {'flag': '🇺🇸', 'buy': '485', 'sell': '493'},
@@ -65,7 +71,7 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
     },
     {
       'name': 'Eurasian Bank',
-      'icon': '🏦',
+      'logo': 'images/eurasian.png',
       'color': Color(0xFF0066CC),
       'rates': [
         {'flag': '🇺🇸', 'buy': '483,5', 'sell': '491,5'},
@@ -75,7 +81,7 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
     },
     {
       'name': 'Kaspi Bank',
-      'icon': '🏦',
+      'logo': 'images/kaspi.png',
       'color': Color(0xFFFF0000),
       'rates': [
         {'flag': '🇺🇸', 'buy': '486', 'sell': '492'},
@@ -85,7 +91,8 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
     },
     {
       'name': 'Jusan Bank',
-      'icon': '🏦',
+      'logo': null,
+      'abbr': 'JB',
       'color': Color(0xFF00B956),
       'rates': [
         {'flag': '🇺🇸', 'buy': '484', 'sell': '490'},
@@ -95,7 +102,7 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
     },
     {
       'name': 'Bereke Bank',
-      'icon': '🏦',
+      'logo': 'images/bereke.jpg',
       'color': Color(0xFF1E88E5),
       'rates': [
         {'flag': '🇺🇸', 'buy': '485,5', 'sell': '493,5'},
@@ -105,36 +112,71 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
     },
   ];
 
+  double _getUsdRate(Map<String, dynamic> bank, String type) {
+    final List rates = bank['isOwn'] == true
+        ? widget.aiuBankRates
+        : List.from(bank['rates'] ?? []);
+    if (rates.isEmpty) return 0;
+    try {
+      final usd = rates.firstWhere(
+        (r) => r is Map && r['flag'] == '🇺🇸',
+        orElse: () => rates[0],
+      );
+      if (usd is! Map) return 0;
+      return double.tryParse(usd[type]?.toString().replaceAll(',', '.') ?? '0') ?? 0;
+    } catch (_) {
+      return 0;
+    }
+  }
+
   List<Map<String, dynamic>> get filteredBanks {
-    if (_searchQuery.isEmpty) return banks;
-    return banks.where((bank) {
+    List<Map<String, dynamic>> result = banks.where((bank) {
       return bank['name'].toString().toLowerCase().contains(_searchQuery.toLowerCase());
     }).toList();
+
+    if (_filterMode == _FilterMode.bestBuy) {
+      result.sort((a, b) => _getUsdRate(a, 'buy').compareTo(_getUsdRate(b, 'buy')));
+    } else if (_filterMode == _FilterMode.bestSell) {
+      result.sort((a, b) => _getUsdRate(b, 'sell').compareTo(_getUsdRate(a, 'sell')));
+    }
+    return result;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+    return AppBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                tr('exchangers', widget.selectedLanguage),
-                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Text(
+                      tr('exchangers', widget.selectedLanguage),
+                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                  ),
+                  _buildFilterButton(),
+                ],
               ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: TextField(
                 onChanged: (value) => setState(() => _searchQuery = value),
+                style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   hintText: tr('search', widget.selectedLanguage),
-                  prefixIcon: const Icon(Icons.search),
+                  hintStyle: const TextStyle(color: Colors.white54),
+                  prefixIcon: const Icon(Icons.search, color: Colors.white54),
                   filled: true,
-                  fillColor: Colors.grey[200],
+                  fillColor: Colors.white.withValues(alpha: 0.08),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
                     borderSide: BorderSide.none,
@@ -157,6 +199,188 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
               ),
             ),
           ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterButton() {
+    final isActive = _filterMode != _FilterMode.none;
+    return GestureDetector(
+      onTap: () => _showFilterSheet(),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          gradient: isActive
+              ? const LinearGradient(
+                  colors: [Color(0xFF42A5F5), Color(0xFF1565C0)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: isActive ? null : Colors.white.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isActive ? Colors.transparent : Colors.white.withValues(alpha: 0.2),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isActive ? Icons.filter_alt : Icons.filter_alt_outlined,
+              color: Colors.white,
+              size: 18,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              isActive
+                  ? (_filterMode == _FilterMode.bestBuy ? 'Купить' : 'Продать')
+                  : 'Фильтр',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF1A2D42),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Сортировка',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+              const SizedBox(height: 20),
+              _buildFilterOption(
+                icon: Icons.trending_down,
+                iconColor: const Color(0xFF42A5F5),
+                title: 'Выгодно купить',
+                subtitle: 'Банки с лучшим курсом покупки',
+                isSelected: _filterMode == _FilterMode.bestBuy,
+                onTap: () {
+                  setState(() => _filterMode = _FilterMode.bestBuy);
+                  Navigator.pop(context);
+                },
+              ),
+              const SizedBox(height: 12),
+              _buildFilterOption(
+                icon: Icons.trending_up,
+                iconColor: const Color(0xFF66BB6A),
+                title: 'Выгодно продать',
+                subtitle: 'Банки с лучшим курсом продажи',
+                isSelected: _filterMode == _FilterMode.bestSell,
+                onTap: () {
+                  setState(() => _filterMode = _FilterMode.bestSell);
+                  Navigator.pop(context);
+                },
+              ),
+              if (_filterMode != _FilterMode.none) ...[
+                const SizedBox(height: 12),
+                _buildFilterOption(
+                  icon: Icons.close,
+                  iconColor: Colors.white54,
+                  title: 'Сбросить фильтр',
+                  subtitle: 'Вернуть исходный порядок',
+                  isSelected: false,
+                  onTap: () {
+                    setState(() => _filterMode = _FilterMode.none);
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFilterOption({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? Colors.white.withValues(alpha: 0.12)
+              : Colors.white.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF42A5F5) : Colors.transparent,
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: iconColor, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(color: Colors.white54, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              const Icon(Icons.check_circle, color: Color(0xFF42A5F5), size: 22),
+          ],
         ),
       ),
     );
@@ -167,15 +391,9 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,17 +407,25 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
                   color: bank['color'],
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Center(
-                  child: Text(
-                    bank['icon'],
-                    style: const TextStyle(fontSize: 28),
-                  ),
-                ),
+                child: bank['logo'] != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.asset(
+                          bank['logo'],
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Center(
+                            child: Text(bank['abbr'] ?? bank['name'][0], style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                      )
+                    : Center(
+                        child: Text(bank['abbr'] ?? bank['icon'] ?? '🏛️', style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
               ),
               const SizedBox(width: 12),
               Text(
                 bank['name'],
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
               ),
             ],
           ),
@@ -209,14 +435,14 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
               Expanded(
                 child: Text(
                   'Покупка',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  style: const TextStyle(fontSize: 14, color: Colors.white54),
                 ),
               ),
               const SizedBox(width: 40),
               Expanded(
                 child: Text(
                   'Продажа',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  style: const TextStyle(fontSize: 14, color: Colors.white54),
                   textAlign: TextAlign.right,
                 ),
               ),
@@ -235,7 +461,7 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
                         const SizedBox(width: 8),
                         Text(
                           '${rate['buy']} ₸',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
                         ),
                       ],
                     ),
@@ -244,7 +470,7 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
                   Expanded(
                     child: Text(
                       '${rate['sell']} ₸',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
                       textAlign: TextAlign.right,
                     ),
                   ),

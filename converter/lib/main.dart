@@ -8,26 +8,37 @@ import 'currency_service.dart';
 import 'translations.dart';
 import 'exchangers_screen.dart';
 import 'trading_chart_screen.dart';
+import 'risk_service.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+class _FadeScalePageTransition extends PageTransitionsBuilder {
+  const _FadeScalePageTransition();
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    return FadeTransition(
+      opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+      child: ScaleTransition(
+        scale: Tween<double>(begin: 0.95, end: 1.0).animate(
+          CurvedAnimation(parent: animation, curve: Curves.easeOut),
+        ),
+        child: child,
+      ),
+    );
+  }
 }
 
-class _MyAppState extends State<MyApp> {
-  bool isDarkMode = false;
-
-  void toggleTheme() {
-    setState(() {
-      isDarkMode = !isDarkMode;
-    });
-  }
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -35,26 +46,48 @@ class _MyAppState extends State<MyApp> {
       title: 'Конвертер Валют',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        brightness: Brightness.light,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.light),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
         brightness: Brightness.dark,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.dark),
+        scaffoldBackgroundColor: const Color(0xFF0D1B2A),
+        cardColor: Colors.white.withValues(alpha: 0.08),
         useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.dark),
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: _FadeScalePageTransition(),
+            TargetPlatform.iOS: _FadeScalePageTransition(),
+            TargetPlatform.windows: _FadeScalePageTransition(),
+            TargetPlatform.linux: _FadeScalePageTransition(),
+            TargetPlatform.macOS: _FadeScalePageTransition(),
+          },
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+          iconTheme: IconThemeData(color: Colors.white),
+        ),
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          backgroundColor: Colors.black.withValues(alpha: 0.7),
+          selectedItemColor: const Color(0xFF42A5F5),
+          unselectedItemColor: Colors.white54,
+          type: BottomNavigationBarType.fixed,
+          elevation: 0,
+        ),
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(color: Colors.white),
+          bodyMedium: TextStyle(color: Colors.white70),
+          titleLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white70),
       ),
-      themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      home: MainScreen(onThemeToggle: toggleTheme, isDarkMode: isDarkMode),
+      home: const MainScreen(),
     );
   }
 }
 
 class MainScreen extends StatefulWidget {
-  final VoidCallback onThemeToggle;
-  final bool isDarkMode;
-
-  const MainScreen({super.key, required this.onThemeToggle, required this.isDarkMode});
+  const MainScreen({super.key});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -77,6 +110,7 @@ class _MainScreenState extends State<MainScreen> {
   ];
   
   List<Map<String, dynamic>> rateHistory = [];
+  List<RiskAlert> riskAlerts = [];
 
   final allCurrencies = worldCurrencies;
   final allCrypto = worldCrypto;
@@ -92,6 +126,67 @@ class _MainScreenState extends State<MainScreen> {
     setState(() {
       exchangeRates = rates;
     });
+  }
+
+  void _onRatesUpdate(List<Map<String, String>> newRates) {
+    final newAlerts = RiskService.analyzeRates(newRates);
+    setState(() {
+      aiuBankRates = newRates;
+      rateHistory.insert(0, {
+        'date': DateTime.now(),
+        'rates': List<Map<String, String>>.from(newRates),
+      });
+      riskAlerts.insertAll(0, newAlerts);
+    });
+    if (newAlerts.isNotEmpty) {
+      _showRiskBanner(newAlerts.first);
+    }
+  }
+
+  void _showRiskBanner(RiskAlert alert) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        duration: const Duration(seconds: 5),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        content: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: alert.isWarning ? const Color(0xFFFF6B00) : Colors.green,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 12),
+            ],
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 32),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      alert.title,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      alert.description,
+                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _openEditScreen() async {
@@ -124,15 +219,7 @@ class _MainScreenState extends State<MainScreen> {
           isLoggedIn: isLoggedIn,
           isLegalEntity: isLegalEntity,
           aiuBankRates: aiuBankRates,
-          onRatesUpdate: (newRates) {
-            setState(() {
-              aiuBankRates = newRates;
-              rateHistory.insert(0, {
-                'date': DateTime.now(),
-                'rates': List<Map<String, String>>.from(newRates),
-              });
-            });
-          },
+          onRatesUpdate: _onRatesUpdate,
         );
       case 2:
         return isLoggedIn && isLegalEntity
@@ -152,6 +239,7 @@ class _MainScreenState extends State<MainScreen> {
           isLegalEntity: isLegalEntity,
           aiuBankRates: aiuBankRates,
           rateHistory: rateHistory,
+          riskAlerts: riskAlerts,
           onCountryChanged: (country) {
             setState(() {
               selectedCountry = country;
@@ -175,25 +263,38 @@ class _MainScreenState extends State<MainScreen> {
               isLegalEntity = false;
             });
           },
-          onRatesUpdate: (newRates) {
+          onNavigateToChart: () {
             setState(() {
-              aiuBankRates = newRates;
-              rateHistory.insert(0, {
-                'date': DateTime.now(),
-                'rates': List<Map<String, String>>.from(newRates),
-              });
+              _selectedIndex = 2;
             });
           },
+          onRatesUpdate: _onRatesUpdate,
         );
       default:
         return Center(child: Text('Страница ${_selectedIndex + 1}'));
     }
   }
 
+  Widget _wrapWithBg(Widget child) {
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Image.asset('assets/images/bg.png', fit: BoxFit.cover),
+        ),
+        Positioned.fill(
+          child: Container(color: Colors.black.withValues(alpha: 0.45)),
+        ),
+        child,
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(child: _getScreen()),
+      backgroundColor: const Color(0xFF0D1B2A),
+      extendBody: true,
+      body: _wrapWithBg(SafeArea(child: _getScreen())),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) => setState(() => _selectedIndex = index),
@@ -287,17 +388,14 @@ class _MainScreenState extends State<MainScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            Text(tr('home', selectedLanguage), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+            Text(tr('home', selectedLanguage), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
             const Spacer(),
-            IconButton(
-              icon: Icon(widget.isDarkMode ? Icons.light_mode : Icons.dark_mode),
-              onPressed: widget.onThemeToggle,
-            ),
+
             TextButton(onPressed: _openEditScreen, child: Text(tr('edit', selectedLanguage))),
           ],
         ),
         const SizedBox(height: 24),
-        Text(tr('currencyRates', selectedLanguage), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        Text(tr('currencyRates', selectedLanguage), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
         const SizedBox(height: 12),
         ...favoriteCurrencies.map((code) {
           final currency = allCurrencies[code]!;
@@ -306,7 +404,7 @@ class _MainScreenState extends State<MainScreen> {
           return _buildCurrencyCard(currency['flag'], code, price, currency['change'], currency['isUp']);
         }),
         const SizedBox(height: 24),
-        Text(tr('crypto', selectedLanguage), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        Text(tr('crypto', selectedLanguage), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
         const SizedBox(height: 12),
         ...favoriteCrypto.map((code) {
           final crypto = allCrypto[code]!;
@@ -321,20 +419,21 @@ class _MainScreenState extends State<MainScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
       ),
       child: Row(
         children: [
           Text(flag, style: const TextStyle(fontSize: 40)),
           const SizedBox(width: 16),
-          Text(code, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(code, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
           const Spacer(),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(price, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              Text(change, style: TextStyle(fontSize: 14, color: isUp ? Colors.green : Colors.red)),
+              Text(price, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+              Text(change, style: TextStyle(fontSize: 14, color: isUp ? const Color(0xFF4CAF50) : const Color(0xFFEF5350))),
             ],
           ),
         ],
@@ -347,8 +446,9 @@ class _MainScreenState extends State<MainScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
       ),
       child: Row(
         children: [
@@ -362,13 +462,13 @@ class _MainScreenState extends State<MainScreen> {
             child: Center(child: Text(symbol, style: const TextStyle(fontSize: 24, color: Colors.white))),
           ),
           const SizedBox(width: 16),
-          Text(code, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(code, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
           const Spacer(),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(price, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              Text(change, style: TextStyle(fontSize: 14, color: isUp ? Colors.green : Colors.red)),
+              Text(price, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+              Text(change, style: TextStyle(fontSize: 14, color: isUp ? const Color(0xFF4CAF50) : const Color(0xFFEF5350))),
             ],
           ),
         ],

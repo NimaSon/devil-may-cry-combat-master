@@ -4,6 +4,14 @@ import 'translations.dart';
 import 'login_screen.dart';
 import 'my_exchanger_screen.dart';
 import 'rate_history_screen.dart';
+import 'risk_notifications_screen.dart';
+import 'risk_service.dart';
+import 'competitor_rates_screen.dart';
+import 'stocks_screen.dart';
+import 'resources_screen.dart';
+import 'nearby_exchangers_screen.dart';
+import 'news_screen.dart';
+import 'app_background.dart';
 
 class OtherScreen extends StatelessWidget {
   final String selectedCountry;
@@ -14,9 +22,11 @@ class OtherScreen extends StatelessWidget {
   final Function(String) onLanguageChanged;
   final Function(bool) onLogin;
   final VoidCallback onLogout;
+  final VoidCallback onNavigateToChart;
   final List<Map<String, String>> aiuBankRates;
   final Function(List<Map<String, String>>) onRatesUpdate;
   final List<Map<String, dynamic>> rateHistory;
+  final List<RiskAlert> riskAlerts;
 
   const OtherScreen({
     super.key,
@@ -28,24 +38,41 @@ class OtherScreen extends StatelessWidget {
     required this.onLanguageChanged,
     required this.onLogin,
     required this.onLogout,
+    required this.onNavigateToChart,
     required this.aiuBankRates,
     required this.onRatesUpdate,
     required this.rateHistory,
+    required this.riskAlerts,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+    return AppBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: ListView(
+          padding: const EdgeInsets.all(16),
         children: [
-          Text(tr('other', selectedLanguage), style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+          Text(tr('other', selectedLanguage), style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white)),
           const SizedBox(height: 24),
           _buildMenuItem(Icons.attach_money, tr('allRates', selectedLanguage), () {}),
-          _buildMenuItem(Icons.show_chart, tr('tradingChart', selectedLanguage), () {}),
-          _buildMenuItem(Icons.language, tr('resources', selectedLanguage), () {}),
-          _buildMenuItem(Icons.archive, tr('archive', selectedLanguage), () {}),
-          _buildMenuItem(Icons.trending_up, tr('stocks', selectedLanguage), () {}),
+          if (!isLegalEntity)
+            _buildMenuItem(Icons.location_on, 'Ближайшие обменники', () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const NearbyExchangersScreen()));
+            }),
+          if (isLoggedIn && isLegalEntity)
+            _buildMenuItem(Icons.show_chart, tr('tradingChart', selectedLanguage), () {
+              onNavigateToChart();
+            }),
+          _buildMenuItem(Icons.newspaper, 'Новости экономики', () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const NewsScreen()));
+          }),
+          _buildMenuItem(Icons.trending_up, tr('stocks', selectedLanguage), () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const StocksScreen()));
+          }),
+          _buildMenuItem(Icons.diamond, 'Ресурсы', () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const ResourcesScreen()));
+          }),
           _buildMenuItem(Icons.settings, tr('settings', selectedLanguage), () {
             Navigator.push(
               context,
@@ -59,6 +86,15 @@ class OtherScreen extends StatelessWidget {
               ),
             );
           }),
+          if (isLoggedIn && isLegalEntity)
+            _buildMenuItem(Icons.leaderboard, 'Курсы конкурентов', () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CompetitorRatesScreen(aiuBankRates: aiuBankRates),
+                ),
+              );
+            }),
           if (isLoggedIn && isLegalEntity)
             _buildMenuItem(Icons.store, 'Мой обменник', () {
               Navigator.push(
@@ -82,6 +118,15 @@ class OtherScreen extends StatelessWidget {
             }),
           if (isLoggedIn && isLegalEntity)
             _buildMenuItem(Icons.sell, 'Мои продажи', () {}),
+          if (isLoggedIn && isLegalEntity)
+            _buildMenuItem(Icons.warning_amber_rounded, 'Уведомления о рисках', () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => RiskNotificationsScreen(alerts: riskAlerts),
+                ),
+              );
+            }),
           const SizedBox(height: 24),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -117,6 +162,7 @@ class OtherScreen extends StatelessWidget {
           ),
         ],
       ),
+      ),
     );
   }
 
@@ -124,27 +170,22 @@ class OtherScreen extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-          ),
-        ],
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
       ),
       child: ListTile(
         leading: Container(
           width: 50,
           height: 50,
           decoration: BoxDecoration(
-            color: Colors.grey[100],
+            color: Colors.white.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, size: 28),
+          child: Icon(icon, size: 28, color: Colors.white),
         ),
-        title: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-        trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+        title: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white)),
+        trailing: const Icon(Icons.chevron_right, color: Colors.white54),
         onTap: onTap,
       ),
     );

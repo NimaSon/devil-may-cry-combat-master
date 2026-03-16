@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'rate_management_screen.dart';
+import 'app_background.dart';
 
 class MyExchangerScreen extends StatelessWidget {
   final List<Map<String, String>> aiuBankRates;
@@ -13,11 +14,15 @@ class MyExchangerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Мой обменник'),
-      ),
-      body: ListView(
+    return AppBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          title: const Text('Мой обменник', style: TextStyle(color: Colors.white)),
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Container(
@@ -59,22 +64,14 @@ class MyExchangerScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Colors.white.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                ),
-              ],
+              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
             ),
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'О нас',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
+                Text('О нас', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
                 SizedBox(height: 12),
                 Text(
                   '✓ Выгодные курсы обмена валют\n'
@@ -82,28 +79,20 @@ class MyExchangerScreen extends StatelessWidget {
                   '✓ Работаем без выходных\n'
                   '✓ Минимальная комиссия\n'
                   '✓ Профессиональное обслуживание',
-                  style: TextStyle(fontSize: 16, height: 1.8),
+                  style: TextStyle(fontSize: 16, height: 1.8, color: Colors.white70),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
-            'Текущие курсы',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
+          const Text('Текущие курсы', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Colors.white.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                ),
-              ],
+              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -117,34 +106,18 @@ class MyExchangerScreen extends StatelessWidget {
                         color: const Color(0xFF00C853),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Center(
-                        child: Text('🏛️', style: TextStyle(fontSize: 28)),
-                      ),
+                      child: const Center(child: Text('🏛️', style: TextStyle(fontSize: 28))),
                     ),
                     const SizedBox(width: 12),
-                    const Text(
-                      'Aiu Bank',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
+                    const Text('Aiu Bank', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
                   ],
                 ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Expanded(
-                      child: Text(
-                        'Покупка',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                      ),
-                    ),
+                    Expanded(child: Text('Покупка', style: TextStyle(fontSize: 14, color: Colors.white54))),
                     const SizedBox(width: 40),
-                    Expanded(
-                      child: Text(
-                        'Продажа',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                        textAlign: TextAlign.right,
-                      ),
-                    ),
+                    Expanded(child: Text('Продажа', style: TextStyle(fontSize: 14, color: Colors.white54), textAlign: TextAlign.right)),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -158,20 +131,13 @@ class MyExchangerScreen extends StatelessWidget {
                             children: [
                               Text(rate['flag']!, style: const TextStyle(fontSize: 24)),
                               const SizedBox(width: 8),
-                              Text(
-                                '${rate['buy']} ₸',
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                              ),
+                              Text('${rate['buy']} ₸', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
                             ],
                           ),
                         ),
                         const SizedBox(width: 40),
                         Expanded(
-                          child: Text(
-                            '${rate['sell']} ₸',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                            textAlign: TextAlign.right,
-                          ),
+                          child: Text('${rate['sell']} ₸', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white), textAlign: TextAlign.right),
                         ),
                       ],
                     ),
@@ -207,6 +173,7 @@ class MyExchangerScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

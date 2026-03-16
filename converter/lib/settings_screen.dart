@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'country_selection_screen.dart';
 import 'language_selection_screen.dart';
 import 'translations.dart';
+import 'app_background.dart';
 
 class SettingsScreen extends StatelessWidget {
   final String selectedCountry;
@@ -19,15 +20,15 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(tr('settings', selectedLanguage)),
-      ),
-      body: ListView(
+    return AppBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(backgroundColor: Colors.transparent, title: Text(tr('settings', selectedLanguage))),
+        body: ListView(
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Text(tr('basics', selectedLanguage), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            child: Text(tr('basics', selectedLanguage), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
           ),
           _buildMenuItem(
             context,
@@ -78,6 +79,7 @@ class SettingsScreen extends StatelessWidget {
             () {},
           ),
         ],
+        ),
       ),
     );
   }
@@ -93,9 +95,9 @@ class SettingsScreen extends StatelessWidget {
         ),
         child: Icon(icon, color: Colors.white),
       ),
-      title: Text(title, style: const TextStyle(fontSize: 14, color: Colors.grey)),
-      subtitle: Text(subtitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
-      trailing: const Icon(Icons.chevron_right),
+      title: Text(title, style: const TextStyle(fontSize: 14, color: Colors.white54)),
+      subtitle: Text(subtitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.white)),
+      trailing: const Icon(Icons.chevron_right, color: Colors.white54),
       onTap: onTap,
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_background.dart';
 import 'auth_screen.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -6,14 +7,13 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Вход'),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
+    return AppBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(backgroundColor: Colors.transparent, title: const Text('Вход'), centerTitle: true),
+        body: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
@@ -44,7 +44,7 @@ class LoginScreen extends StatelessWidget {
             const SizedBox(height: 32),
             const Text(
               'Выберите тип аккаунта',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 40),
@@ -117,6 +117,7 @@ class LoginScreen extends StatelessWidget {
               ],
             ),
           ],
+        ),
         ),
       ),
     );

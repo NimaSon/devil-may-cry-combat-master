@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_background.dart';
 
 class CountrySelectionScreen extends StatefulWidget {
   final String selectedCountry;
@@ -34,39 +35,33 @@ class _CountrySelectionScreenState extends State<CountrySelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.notifications_outlined),
-          onPressed: () {},
+    return AppBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          leading: IconButton(icon: const Icon(Icons.notifications_outlined), onPressed: () {}),
+          title: const Text('Изменение страны'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, _selectedCountry),
+              child: const Text('Готово', style: TextStyle(fontSize: 16)),
+            ),
+          ],
         ),
-        title: const Text('Изменение страны'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context, _selectedCountry);
-            },
-            child: const Text('Готово', style: TextStyle(fontSize: 16)),
-          ),
-        ],
-      ),
-      body: ListView.builder(
-        itemCount: countries.length,
-        itemBuilder: (context, index) {
-          final country = countries[index];
-          final isSelected = _selectedCountry == country['code'];
-          
-          return ListTile(
-            leading: Text(country['flag']!, style: const TextStyle(fontSize: 40)),
-            title: Text(country['name']!, style: const TextStyle(fontSize: 18)),
-            trailing: isSelected ? const Icon(Icons.check, color: Colors.blue) : null,
-            onTap: () {
-              setState(() {
-                _selectedCountry = country['code']!;
-              });
-            },
-          );
-        },
+        body: ListView.builder(
+          itemCount: countries.length,
+          itemBuilder: (context, index) {
+            final country = countries[index];
+            final isSelected = _selectedCountry == country['code'];
+            return ListTile(
+              leading: Text(country['flag']!, style: const TextStyle(fontSize: 40)),
+              title: Text(country['name']!, style: const TextStyle(fontSize: 18, color: Colors.white)),
+              trailing: isSelected ? const Icon(Icons.check, color: Color(0xFF42A5F5)) : null,
+              onTap: () => setState(() => _selectedCountry = country['code']!),
+            );
+          },
+        ),
       ),
     );
   }

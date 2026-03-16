@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_background.dart';
 
 class AuthScreen extends StatefulWidget {
   final bool isLegalEntity;
@@ -16,11 +17,14 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.isLegalEntity ? 'Вход для юридического лица' : 'Вход для физического лица'),
-      ),
-      body: Padding(
+    return AppBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          title: Text(widget.isLegalEntity ? 'Вход для юридического лица' : 'Вход для физического лица'),
+        ),
+        body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -113,6 +117,7 @@ class _AuthScreenState extends State<AuthScreen> {
               ],
             ),
           ],
+        ),
         ),
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_background.dart';
 
 class LanguageSelectionScreen extends StatefulWidget {
   final String selectedLanguage;
@@ -38,39 +39,33 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.notifications_outlined),
-          onPressed: () {},
+    return AppBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          leading: IconButton(icon: const Icon(Icons.notifications_outlined), onPressed: () {}),
+          title: const Text('Изменение языка'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, _selectedLanguage),
+              child: const Text('Готово', style: TextStyle(fontSize: 16)),
+            ),
+          ],
         ),
-        title: const Text('Изменение языка'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context, _selectedLanguage);
-            },
-            child: const Text('Готово', style: TextStyle(fontSize: 16)),
-          ),
-        ],
-      ),
-      body: ListView.builder(
-        itemCount: languages.length,
-        itemBuilder: (context, index) {
-          final language = languages[index];
-          final isSelected = _selectedLanguage == language['code'];
-          
-          return ListTile(
-            leading: Text(language['flag']!, style: const TextStyle(fontSize: 40)),
-            title: Text(language['name']!, style: const TextStyle(fontSize: 18)),
-            trailing: isSelected ? const Icon(Icons.check, color: Colors.blue) : null,
-            onTap: () {
-              setState(() {
-                _selectedLanguage = language['code']!;
-              });
-            },
-          );
-        },
+        body: ListView.builder(
+          itemCount: languages.length,
+          itemBuilder: (context, index) {
+            final language = languages[index];
+            final isSelected = _selectedLanguage == language['code'];
+            return ListTile(
+              leading: Text(language['flag']!, style: const TextStyle(fontSize: 40)),
+              title: Text(language['name']!, style: const TextStyle(fontSize: 18, color: Colors.white)),
+              trailing: isSelected ? const Icon(Icons.check, color: Color(0xFF42A5F5)) : null,
+              onTap: () => setState(() => _selectedLanguage = language['code']!),
+            );
+          },
+        ),
       ),
     );
   }
