@@ -268,6 +268,11 @@ class _MainScreenState extends State<MainScreen> {
               _selectedIndex = 2;
             });
           },
+          onNavigateToHome: () {
+            setState(() {
+              _selectedIndex = 0;
+            });
+          },
           onRatesUpdate: _onRatesUpdate,
         );
       default:
