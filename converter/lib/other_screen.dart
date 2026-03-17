@@ -29,6 +29,8 @@ class OtherScreen extends StatelessWidget {
   final Function(List<Map<String, String>>) onRatesUpdate;
   final List<Map<String, dynamic>> rateHistory;
   final List<RiskAlert> riskAlerts;
+  final List<BankForecast> bankForecasts;
+  final Function(List<BankForecast>) onForecastsUpdate;
 
   const OtherScreen({
     super.key,
@@ -46,6 +48,8 @@ class OtherScreen extends StatelessWidget {
     required this.onRatesUpdate,
     required this.rateHistory,
     required this.riskAlerts,
+    required this.bankForecasts,
+    required this.onForecastsUpdate,
   });
 
   @override
@@ -75,7 +79,18 @@ class OtherScreen extends StatelessWidget {
             }),
           if (!isLegalEntity)
             _buildMenuItem(Icons.auto_graph, 'Прогноз курса', () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => ForecastScreen(rateHistory: rateHistory)));
+              Navigator.push(context, MaterialPageRoute(
+                builder: (context) => ForecastViewScreen(forecasts: bankForecasts),
+              ));
+            }),
+          if (isLoggedIn && isLegalEntity)
+            _buildMenuItem(Icons.auto_graph, 'Прогноз курса', () {
+              Navigator.push(context, MaterialPageRoute(
+                builder: (context) => ForecastManageScreen(
+                  forecasts: bankForecasts,
+                  onSave: onForecastsUpdate,
+                ),
+              ));
             }),
           _buildMenuItem(Icons.settings, tr('settings', selectedLanguage), () {
             Navigator.push(

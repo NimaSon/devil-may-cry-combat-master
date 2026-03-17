@@ -1,326 +1,247 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
+import 'package:intl/intl.dart';
 import 'app_background.dart';
 
-class ForecastScreen extends StatefulWidget {
-  final List<Map<String, dynamic>> rateHistory;
+class BankForecast {
+  final String currency;
+  final String direction; // 'up' | 'down' | 'neutral'
+  final double targetValue;
+  final String period; // 'week' | 'month'
+  final String comment;
+  final DateTime createdAt;
 
-  const ForecastScreen({super.key, required this.rateHistory});
-
-  @override
-  State<ForecastScreen> createState() => _ForecastScreenState();
+  BankForecast({
+    required this.currency,
+    required this.direction,
+    required this.targetValue,
+    required this.period,
+    required this.comment,
+    required this.createdAt,
+  });
 }
 
-class _ForecastScreenState extends State<ForecastScreen> {
-  String selectedCurrency = 'USD';
+// ─── Экран для ФИЗ ЛИЦА — просмотр прогноза банка ───────────────────────────
 
-  final currencies = [
-    {'code': 'USD', 'flag': '🇺🇸', 'index': 0},
-    {'code': 'EUR', 'flag': '🇪🇺', 'index': 1},
-    {'code': 'RUB', 'flag': '🇷🇺', 'index': 2},
-  ];
+class ForecastViewScreen extends StatelessWidget {
+  final List<BankForecast> forecasts;
 
-  List<double> _getHistoricalData(int currencyIndex) {
-    if (widget.rateHistory.isEmpty) return [];
-    return widget.rateHistory.reversed.map((entry) {
-      final rates = entry['rates'] as List<Map<String, String>>;
-      return double.tryParse(rates[currencyIndex]['sell']!.replaceAll(',', '.')) ?? 0;
-    }).toList();
-  }
-
-  Map<String, dynamic> _buildForecast(List<double> data) {
-    if (data.length < 2) {
-      return {
-        'forecast': <double>[],
-        'trend': 0.0,
-        'confidence': 'low',
-        'direction': 'neutral',
-        'predictedChange': 0.0,
-      };
-    }
-
-    // Линейная регрессия
-    final n = data.length;
-    double sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
-    for (int i = 0; i < n; i++) {
-      sumX += i;
-      sumY += data[i];
-      sumXY += i * data[i];
-      sumX2 += i * i;
-    }
-    final slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-    final intercept = (sumY - slope * sumX) / n;
-
-    // Прогноз на 5 точек вперед
-    final forecast = List.generate(5, (i) => intercept + slope * (n + i));
-
-    // Уровень уверенности по количеству данных
-    String confidence;
-    if (n >= 10) confidence = 'high';
-    else if (n >= 5) confidence = 'medium';
-    else confidence = 'low';
-
-    final predictedChange = forecast.last - data.last;
-    final direction = slope > 0.01 ? 'up' : slope < -0.01 ? 'down' : 'neutral';
-
-    return {
-      'forecast': forecast,
-      'trend': slope,
-      'confidence': confidence,
-      'direction': direction,
-      'predictedChange': predictedChange,
-    };
-  }
+  const ForecastViewScreen({super.key, required this.forecasts});
 
   @override
   Widget build(BuildContext context) {
-    final currencyInfo = currencies.firstWhere((c) => c['code'] == selectedCurrency);
-    final idx = currencyInfo['index'] as int;
-    final historical = _getHistoricalData(idx);
-    final forecast = _buildForecast(historical);
-    final direction = forecast['direction'] as String;
-    final confidence = forecast['confidence'] as String;
-    final predictedChange = forecast['predictedChange'] as double;
-    final forecastPoints = forecast['forecast'] as List<double>;
-
-    final isUp = direction == 'up';
-    final isNeutral = direction == 'neutral';
-    final mainColor = isNeutral
-        ? const Color(0xFF42A5F5)
-        : isUp
-            ? const Color(0xFF00C853)
-            : const Color(0xFFFF1744);
-
-    final allPoints = [...historical, ...forecastPoints];
-
     return AppBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: const Text('Прогноз курса'),
-        ),
-        body: historical.length < 2
-            ? _buildEmptyState()
+        appBar: AppBar(title: const Text('Прогноз курса')),
+        body: forecasts.isEmpty
+            ? _buildEmpty()
             : ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  // Выбор валюты
-                  Row(
-                    children: currencies.map((c) {
-                      final isSelected = selectedCurrency == c['code'];
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: GestureDetector(
-                          onTap: () => setState(() => selectedCurrency = c['code'] as String),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            decoration: BoxDecoration(
-                              gradient: isSelected
-                                  ? LinearGradient(colors: [mainColor, mainColor.withOpacity(0.7)])
-                                  : null,
-                              color: isSelected ? null : Colors.white.withOpacity(0.08),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: isSelected ? mainColor : Colors.white.withOpacity(0.15),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Text(c['flag'] as String, style: const TextStyle(fontSize: 18)),
-                                const SizedBox(width: 6),
-                                Text(
-                                  c['code'] as String,
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
-                                    color: isSelected ? Colors.white : Colors.white54,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
+                  _buildHeader(),
                   const SizedBox(height: 16),
-
-                  // Карточка прогноза
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [mainColor.withOpacity(0.3), mainColor.withOpacity(0.1)],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: mainColor.withOpacity(0.4)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              isNeutral ? Icons.trending_flat : isUp ? Icons.trending_up : Icons.trending_down,
-                              color: mainColor,
-                              size: 32,
-                            ),
-                            const SizedBox(width: 12),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  isNeutral ? 'Стабильный курс' : isUp ? 'Ожидается рост' : 'Ожидается падение',
-                                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-                                ),
-                                Text(
-                                  selectedCurrency,
-                                  style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.6)),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            _buildStatCard(
-                              'Изменение',
-                              '${predictedChange >= 0 ? '+' : ''}${predictedChange.toStringAsFixed(2)} ₸',
-                              mainColor,
-                            ),
-                            const SizedBox(width: 12),
-                            _buildStatCard(
-                              'Уверенность',
-                              confidence == 'high' ? 'Высокая' : confidence == 'medium' ? 'Средняя' : 'Низкая',
-                              confidence == 'high' ? Colors.green : confidence == 'medium' ? Colors.orange : Colors.red,
-                            ),
-                            const SizedBox(width: 12),
-                            _buildStatCard(
-                              'Данных',
-                              '${historical.length} точек',
-                              Colors.white54,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // График
-                  Container(
-                    height: 220,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withOpacity(0.1)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(width: 20, height: 3, color: mainColor),
-                            const SizedBox(width: 6),
-                            const Text('История', style: TextStyle(fontSize: 12, color: Colors.white54)),
-                            const SizedBox(width: 16),
-                            Container(
-                              width: 20,
-                              height: 3,
-                              decoration: BoxDecoration(
-                                border: Border(bottom: BorderSide(color: mainColor, width: 2, style: BorderStyle.solid)),
-                              ),
-                              child: CustomPaint(painter: _DashedLinePainter(color: mainColor)),
-                            ),
-                            const SizedBox(width: 6),
-                            const Text('Прогноз', style: TextStyle(fontSize: 12, color: Colors.white54)),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Expanded(
-                          child: CustomPaint(
-                            painter: ForecastChartPainter(
-                              historical: historical,
-                              forecast: forecastPoints,
-                              color: mainColor,
-                            ),
-                            child: Container(),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Подсказка
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.white.withOpacity(0.08)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.info_outline, color: Colors.white38, size: 20),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            confidence == 'low'
-                                ? 'Недостаточно данных для точного прогноза. Прогноз улучшится по мере накопления истории изменений курсов.'
-                                : 'Прогноз основан на линейной регрессии по ${historical.length} точкам истории изменений курсов Aiu Bank.',
-                            style: const TextStyle(fontSize: 12, color: Colors.white38),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  ...forecasts.map((f) => _buildForecastCard(f)),
                 ],
               ),
       ),
     );
   }
 
-  Widget _buildStatCard(String label, String value, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.07),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            Text(label, style: const TextStyle(fontSize: 11, color: Colors.white38)),
-            const SizedBox(height: 4),
-            Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: color)),
-          ],
-        ),
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: const Color(0xFF00C853).withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Center(child: Text('🏛️', style: TextStyle(fontSize: 26))),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Aiu Bank', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                Text('Официальный прогноз курсов валют', style: TextStyle(fontSize: 12, color: Colors.white54)),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF00C853).withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFF00C853).withOpacity(0.3)),
+            ),
+            child: const Text('Официально', style: TextStyle(fontSize: 11, color: Color(0xFF00C853), fontWeight: FontWeight.w600)),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildForecastCard(BankForecast f) {
+    final isUp = f.direction == 'up';
+    final isNeutral = f.direction == 'neutral';
+    final color = isNeutral ? const Color(0xFF42A5F5) : isUp ? const Color(0xFF00C853) : const Color(0xFFFF1744);
+    final flag = f.currency == 'USD' ? '🇺🇸' : f.currency == 'EUR' ? '🇪🇺' : '🇷🇺';
+    final dirText = isNeutral ? 'Стабильный курс' : isUp ? 'Ожидается рост' : 'Ожидается снижение';
+    final periodText = f.period == 'week' ? 'на неделю' : 'на месяц';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.3)),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [color.withOpacity(0.12), color.withOpacity(0.04)],
+        ),
+      ),
+      child: Column(
+        children: [
+          // Заголовок карточки
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Text(flag, style: const TextStyle(fontSize: 36)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(f.currency, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
+                      Text(periodText, style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.5))),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: color.withOpacity(0.4)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isNeutral ? Icons.trending_flat : isUp ? Icons.trending_up : Icons.trending_down,
+                        color: color,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(isNeutral ? '→' : isUp ? '↑' : '↓',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Прогнозируемое значение
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Прогноз', style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.4))),
+                      const SizedBox(height: 4),
+                      Text(dirText, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: color)),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('Целевой курс', style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.4))),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${f.targetValue.toStringAsFixed(1)} ₸',
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Комментарий банка
+          if (f.comment.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.04),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.format_quote, color: Colors.white24, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(f.comment, style: const TextStyle(fontSize: 13, color: Colors.white60, fontStyle: FontStyle.italic)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          // Дата
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                const Icon(Icons.access_time, size: 14, color: Colors.white24),
+                const SizedBox(width: 4),
+                Text(
+                  'Опубликовано ${DateFormat('dd.MM.yyyy HH:mm').format(f.createdAt)}',
+                  style: const TextStyle(fontSize: 11, color: Colors.white24),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmpty() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.show_chart, size: 80, color: Colors.white.withOpacity(0.2)),
+          Icon(Icons.show_chart, size: 80, color: Colors.white.withOpacity(0.15)),
           const SizedBox(height: 16),
-          const Text(
-            'Нет данных для прогноза',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-          ),
+          const Text('Прогнозов пока нет', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
           const SizedBox(height: 8),
           Text(
-            'Прогноз появится после того,\nкак обменник изменит курсы хотя бы раз',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.4)),
+            'Банк ещё не опубликовал прогноз курсов',
+            style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.35)),
           ),
         ],
       ),
@@ -328,137 +249,354 @@ class _ForecastScreenState extends State<ForecastScreen> {
   }
 }
 
-class _DashedLinePainter extends CustomPainter {
-  final Color color;
-  _DashedLinePainter({required this.color});
+// ─── Экран для ЮРИ ЛИЦА — управление прогнозом ──────────────────────────────
+
+class ForecastManageScreen extends StatefulWidget {
+  final List<BankForecast> forecasts;
+  final Function(List<BankForecast>) onSave;
+
+  const ForecastManageScreen({super.key, required this.forecasts, required this.onSave});
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color..strokeWidth = 2;
-    double x = 0;
-    while (x < size.width) {
-      canvas.drawLine(Offset(x, size.height / 2), Offset(x + 4, size.height / 2), paint);
-      x += 8;
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  State<ForecastManageScreen> createState() => _ForecastManageScreenState();
 }
 
-class ForecastChartPainter extends CustomPainter {
-  final List<double> historical;
-  final List<double> forecast;
-  final Color color;
-
-  ForecastChartPainter({required this.historical, required this.forecast, required this.color});
+class _ForecastManageScreenState extends State<ForecastManageScreen> {
+  late List<BankForecast> _forecasts;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    if (historical.isEmpty || historical.length < 2) return;
-
-    final allData = [...historical, ...forecast];
-    final maxVal = allData.reduce(max);
-    final minVal = allData.reduce(min);
-    final range = (maxVal - minVal).clamp(0.1, double.infinity);
-    final total = allData.length;
-    if (total < 2) return;
-
-    double x(int i) => size.width / (total - 1) * i;
-    double y(double v) => size.height - ((v - minVal) / range) * size.height * 0.85 - size.height * 0.05;
-
-    // Grid
-    final gridPaint = Paint()
-      ..color = Colors.white.withOpacity(0.07)
-      ..strokeWidth = 1;
-    for (int i = 0; i <= 3; i++) {
-      final gy = size.height / 3 * i;
-      canvas.drawLine(Offset(0, gy), Offset(size.width, gy), gridPaint);
-    }
-
-    // Fill под историей
-    final fillPath = Path();
-    fillPath.moveTo(x(0), size.height);
-    for (int i = 0; i < historical.length; i++) {
-      fillPath.lineTo(x(i), y(historical[i]));
-    }
-    fillPath.lineTo(x(historical.length - 1), size.height);
-    fillPath.close();
-    canvas.drawPath(
-      fillPath,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [color.withOpacity(0.25), color.withOpacity(0.0)],
-        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height)),
-    );
-
-    // Линия истории
-    final histPaint = Paint()
-      ..color = color
-      ..strokeWidth = 2.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-    final histPath = Path();
-    for (int i = 0; i < historical.length; i++) {
-      i == 0 ? histPath.moveTo(x(i), y(historical[i])) : histPath.lineTo(x(i), y(historical[i]));
-    }
-    canvas.drawPath(histPath, histPaint);
-
-    // Пунктирная линия прогноза
-    final dashPaint = Paint()
-      ..color = color.withOpacity(0.7)
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-
-    double startX = x(historical.length - 1);
-    double startY = y(historical.last);
-    for (int i = 0; i < forecast.length; i++) {
-      final endX = x(historical.length + i);
-      final endY = y(forecast[i]);
-      _drawDashedLine(canvas, Offset(startX, startY), Offset(endX, endY), dashPaint);
-      startX = endX;
-      startY = endY;
-    }
-
-    // Точки истории
-    final dotPaint = Paint()..color = color..style = PaintingStyle.fill;
-    final dotBg = Paint()..color = Colors.black..style = PaintingStyle.fill;
-    for (int i = 0; i < historical.length; i++) {
-      canvas.drawCircle(Offset(x(i), y(historical[i])), 4, dotBg);
-      canvas.drawCircle(Offset(x(i), y(historical[i])), 3, dotPaint);
-    }
-
-    // Точки прогноза (полупрозрачные)
-    final forecastDot = Paint()..color = color.withOpacity(0.5)..style = PaintingStyle.fill;
-    for (int i = 0; i < forecast.length; i++) {
-      canvas.drawCircle(Offset(x(historical.length + i), y(forecast[i])), 3, forecastDot);
-    }
-
-    // Вертикальная разделительная линия
-    final divPaint = Paint()
-      ..color = Colors.white.withOpacity(0.2)
-      ..strokeWidth = 1;
-    canvas.drawLine(
-      Offset(x(historical.length - 1), 0),
-      Offset(x(historical.length - 1), size.height),
-      divPaint,
-    );
+  void initState() {
+    super.initState();
+    _forecasts = List.from(widget.forecasts);
   }
 
-  void _drawDashedLine(Canvas canvas, Offset start, Offset end, Paint paint) {
-    final dx = end.dx - start.dx;
-    final dy = end.dy - start.dy;
-    final dist = sqrt(dx * dx + dy * dy);
-    final steps = (dist / 8).floor();
-    for (int i = 0; i < steps; i += 2) {
-      final s = Offset(start.dx + dx * i / steps, start.dy + dy * i / steps);
-      final e = Offset(start.dx + dx * (i + 1) / steps, start.dy + dy * (i + 1) / steps);
-      canvas.drawLine(s, e, paint);
+  void _addOrEdit({BankForecast? existing}) async {
+    final result = await showModalBottomSheet<BankForecast>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _ForecastFormSheet(existing: existing),
+    );
+    if (result != null) {
+      setState(() {
+        if (existing != null) {
+          final idx = _forecasts.indexOf(existing);
+          _forecasts[idx] = result;
+        } else {
+          _forecasts.removeWhere((f) => f.currency == result.currency);
+          _forecasts.add(result);
+        }
+      });
+      widget.onSave(_forecasts);
     }
   }
 
+  void _delete(BankForecast f) {
+    setState(() => _forecasts.remove(f));
+    widget.onSave(_forecasts);
+  }
+
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  Widget build(BuildContext context) {
+    return AppBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(title: const Text('Управление прогнозом')),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => _addOrEdit(),
+          backgroundColor: const Color(0xFF00C853),
+          icon: const Icon(Icons.add, color: Colors.white),
+          label: const Text('Добавить', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        ),
+        body: _forecasts.isEmpty
+            ? _buildEmpty()
+            : ListView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00C853).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFF00C853).withOpacity(0.25)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Color(0xFF00C853), size: 18),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Ваши прогнозы видят все клиенты в разделе "Прогноз курса"',
+                            style: TextStyle(fontSize: 13, color: Color(0xFF00C853)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ..._forecasts.map((f) => _buildManageCard(f)),
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget _buildManageCard(BankForecast f) {
+    final isUp = f.direction == 'up';
+    final isNeutral = f.direction == 'neutral';
+    final color = isNeutral ? const Color(0xFF42A5F5) : isUp ? const Color(0xFF00C853) : const Color(0xFFFF1744);
+    final flag = f.currency == 'USD' ? '🇺🇸' : f.currency == 'EUR' ? '🇪🇺' : '🇷🇺';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.25)),
+      ),
+      child: Row(
+        children: [
+          Text(flag, style: const TextStyle(fontSize: 32)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(f.currency, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                Text(
+                  '${f.targetValue.toStringAsFixed(1)} ₸ · ${f.period == 'week' ? 'Неделя' : 'Месяц'}',
+                  style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.5)),
+                ),
+              ],
+            ),
+          ),
+          Icon(
+            isNeutral ? Icons.trending_flat : isUp ? Icons.trending_up : Icons.trending_down,
+            color: color,
+            size: 28,
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, color: Colors.white54, size: 20),
+            onPressed: () => _addOrEdit(existing: f),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+            onPressed: () => _delete(f),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmpty() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.add_chart, size: 80, color: Colors.white.withOpacity(0.15)),
+          const SizedBox(height: 16),
+          const Text('Нет прогнозов', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+          const SizedBox(height: 8),
+          Text('Нажмите + чтобы добавить прогноз', style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.35))),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Форма добавления/редактирования прогноза ────────────────────────────────
+
+class _ForecastFormSheet extends StatefulWidget {
+  final BankForecast? existing;
+  const _ForecastFormSheet({this.existing});
+
+  @override
+  State<_ForecastFormSheet> createState() => _ForecastFormSheetState();
+}
+
+class _ForecastFormSheetState extends State<_ForecastFormSheet> {
+  String _currency = 'USD';
+  String _direction = 'up';
+  String _period = 'week';
+  final _valueController = TextEditingController();
+  final _commentController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.existing != null) {
+      _currency = widget.existing!.currency;
+      _direction = widget.existing!.direction;
+      _period = widget.existing!.period;
+      _valueController.text = widget.existing!.targetValue.toStringAsFixed(1);
+      _commentController.text = widget.existing!.comment;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      decoration: const BoxDecoration(
+        color: Color(0xFF0D1B2A),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+            ),
+            const SizedBox(height: 20),
+            const Text('Прогноз курса', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(height: 20),
+
+            // Валюта
+            const Text('Валюта', style: TextStyle(fontSize: 13, color: Colors.white54)),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _chip('USD', '🇺🇸', _currency == 'USD', () => setState(() => _currency = 'USD')),
+                const SizedBox(width: 8),
+                _chip('EUR', '🇪🇺', _currency == 'EUR', () => setState(() => _currency = 'EUR')),
+                const SizedBox(width: 8),
+                _chip('RUB', '🇷🇺', _currency == 'RUB', () => setState(() => _currency = 'RUB')),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Направление
+            const Text('Направление', style: TextStyle(fontSize: 13, color: Colors.white54)),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _dirChip('up', '↑ Рост', const Color(0xFF00C853)),
+                const SizedBox(width: 8),
+                _dirChip('down', '↓ Падение', const Color(0xFFFF1744)),
+                const SizedBox(width: 8),
+                _dirChip('neutral', '→ Стабильно', const Color(0xFF42A5F5)),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Период
+            const Text('Период', style: TextStyle(fontSize: 13, color: Colors.white54)),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _chip('Неделя', null, _period == 'week', () => setState(() => _period = 'week')),
+                const SizedBox(width: 8),
+                _chip('Месяц', null, _period == 'month', () => setState(() => _period = 'month')),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Целевой курс
+            const Text('Целевой курс (₸)', style: TextStyle(fontSize: 13, color: Colors.white54)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _valueController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Например: 495.0',
+                hintStyle: const TextStyle(color: Colors.white24),
+                filled: true,
+                fillColor: Colors.white.withOpacity(0.07),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                suffixText: '₸',
+                suffixStyle: const TextStyle(color: Colors.white54),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Комментарий
+            const Text('Комментарий банка (необязательно)', style: TextStyle(fontSize: 13, color: Colors.white54)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _commentController,
+              maxLines: 2,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Например: Ожидаем укрепление доллара...',
+                hintStyle: const TextStyle(color: Colors.white24),
+                filled: true,
+                fillColor: Colors.white.withOpacity(0.07),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  final val = double.tryParse(_valueController.text.replaceAll(',', '.'));
+                  if (val == null) return;
+                  Navigator.pop(context, BankForecast(
+                    currency: _currency,
+                    direction: _direction,
+                    targetValue: val,
+                    period: _period,
+                    comment: _commentController.text.trim(),
+                    createdAt: DateTime.now(),
+                  ));
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00C853),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                child: const Text('Опубликовать прогноз', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _chip(String label, String? flag, bool selected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFF00C853).withOpacity(0.2) : Colors.white.withOpacity(0.07),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: selected ? const Color(0xFF00C853) : Colors.white.withOpacity(0.1)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (flag != null) ...[Text(flag, style: const TextStyle(fontSize: 16)), const SizedBox(width: 6)],
+            Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: selected ? const Color(0xFF00C853) : Colors.white54)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _dirChip(String value, String label, Color color) {
+    final selected = _direction == value;
+    return GestureDetector(
+      onTap: () => setState(() => _direction = value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? color.withOpacity(0.2) : Colors.white.withOpacity(0.07),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: selected ? color : Colors.white.withOpacity(0.1)),
+        ),
+        child: Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: selected ? color : Colors.white54)),
+      ),
+    );
+  }
 }

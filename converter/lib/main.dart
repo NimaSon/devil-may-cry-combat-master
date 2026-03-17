@@ -9,6 +9,7 @@ import 'translations.dart';
 import 'exchangers_screen.dart';
 import 'trading_chart_screen.dart';
 import 'risk_service.dart';
+import 'forecast_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -111,6 +112,7 @@ class _MainScreenState extends State<MainScreen> {
   
   List<Map<String, dynamic>> rateHistory = [];
   List<RiskAlert> riskAlerts = [];
+  List<BankForecast> bankForecasts = [];
 
   final allCurrencies = worldCurrencies;
   final allCrypto = worldCrypto;
@@ -240,6 +242,10 @@ class _MainScreenState extends State<MainScreen> {
           aiuBankRates: aiuBankRates,
           rateHistory: rateHistory,
           riskAlerts: riskAlerts,
+          bankForecasts: bankForecasts,
+          onForecastsUpdate: (forecasts) {
+            setState(() => bankForecasts = forecasts);
+          },
           onCountryChanged: (country) {
             setState(() {
               selectedCountry = country;
