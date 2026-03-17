@@ -23,6 +23,7 @@ class OtherScreen extends StatelessWidget {
   final Function(bool) onLogin;
   final VoidCallback onLogout;
   final VoidCallback onNavigateToChart;
+  final VoidCallback onNavigateToHome;
   final List<Map<String, String>> aiuBankRates;
   final Function(List<Map<String, String>>) onRatesUpdate;
   final List<Map<String, dynamic>> rateHistory;
@@ -39,6 +40,7 @@ class OtherScreen extends StatelessWidget {
     required this.onLogin,
     required this.onLogout,
     required this.onNavigateToChart,
+    required this.onNavigateToHome,
     required this.aiuBankRates,
     required this.onRatesUpdate,
     required this.rateHistory,
@@ -55,7 +57,9 @@ class OtherScreen extends StatelessWidget {
         children: [
           Text(tr('other', selectedLanguage), style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white)),
           const SizedBox(height: 24),
-          _buildMenuItem(Icons.attach_money, tr('allRates', selectedLanguage), () {}),
+          _buildMenuItem(Icons.attach_money, tr('allRates', selectedLanguage), () {
+            onNavigateToHome();
+          }),
           if (!isLegalEntity)
             _buildMenuItem(Icons.location_on, 'Ближайшие обменники', () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const NearbyExchangersScreen()));
@@ -64,15 +68,10 @@ class OtherScreen extends StatelessWidget {
             _buildMenuItem(Icons.show_chart, tr('tradingChart', selectedLanguage), () {
               onNavigateToChart();
             }),
-          _buildMenuItem(Icons.newspaper, 'Новости экономики', () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const NewsScreen()));
-          }),
-          _buildMenuItem(Icons.trending_up, tr('stocks', selectedLanguage), () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const StocksScreen()));
-          }),
-          _buildMenuItem(Icons.diamond, 'Ресурсы', () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const ResourcesScreen()));
-          }),
+          if (!isLegalEntity)
+            _buildMenuItem(Icons.newspaper, 'Новости экономики', () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const NewsScreen()));
+            }),
           _buildMenuItem(Icons.settings, tr('settings', selectedLanguage), () {
             Navigator.push(
               context,

@@ -113,7 +113,8 @@ class _NearbyExchangersScreenState extends State<NearbyExchangersScreen> {
   Position? _position;
   bool _loading = true;
   String? _error;
-  String _sortBy = 'distance'; // 'distance' | 'usdBuy' | 'usdSell'
+  String _sortBy = 'distance';
+  bool _onlyOpen = false;
 
   @override
   void initState() {
@@ -156,7 +157,8 @@ class _NearbyExchangersScreenState extends State<NearbyExchangersScreen> {
   }
 
   List<NearbyExchanger> get _sorted {
-    final list = List<NearbyExchanger>.from(_mockExchangers);
+    var list = List<NearbyExchanger>.from(_mockExchangers);
+    if (_onlyOpen) list = list.where((e) => e.isOpen).toList();
     if (_sortBy == 'distance' && _position != null) {
       list.sort((a, b) => (_getDistance(a) ?? 999).compareTo(_getDistance(b) ?? 999));
     } else if (_sortBy == 'usdBuy') {
@@ -203,21 +205,69 @@ class _NearbyExchangersScreenState extends State<NearbyExchangersScreen> {
   }
 
   Widget _buildSortBar() {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-      ),
-      child: Row(
-        children: [
-          _sortChip('distance', '📍 Рядом'),
-          _sortChip('usdBuy', '💰 Выгодно купить'),
-          _sortChip('usdSell', '💸 Выгодно продать'),
-        ],
-      ),
+    return Column(
+      children: [
+        Container(
+          margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+          ),
+          child: Row(
+            children: [
+              _sortChip('distance', '📍 Рядом'),
+              _sortChip('usdBuy', '💰 Выгодно купить'),
+              _sortChip('usdSell', '💸 Выгодно продать'),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: () => setState(() => _onlyOpen = false),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    gradient: !_onlyOpen
+                        ? const LinearGradient(colors: [Color(0xFF1565C0), Color(0xFF42A5F5)])
+                        : null,
+                    color: _onlyOpen ? Colors.white.withValues(alpha: 0.08) : null,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                  ),
+                  child: Text('Все', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: !_onlyOpen ? Colors.white : Colors.white54)),
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () => setState(() => _onlyOpen = true),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: _onlyOpen ? Colors.green.withValues(alpha: 0.25) : Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: _onlyOpen ? Colors.greenAccent : Colors.white.withValues(alpha: 0.15)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.greenAccent, shape: BoxShape.circle)),
+                      const SizedBox(width: 6),
+                      Text('Открыто сейчас', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _onlyOpen ? Colors.greenAccent : Colors.white54)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
