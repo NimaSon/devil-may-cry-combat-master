@@ -33,14 +33,14 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
   final List<Map<String, dynamic>> banks = [
     {
       'name': 'Aiu Bank',
-      'logo': 'images/aiu.jpg',
+      'logo': 'assets/images/aiu.jpg',
       'color': Color(0xFF00C853),
       'isOwn': true,
       'rates': [],
     },
     {
       'name': 'Halyk Bank',
-      'logo': 'images/halyk.jpeg',
+      'logo': 'assets/images/halyk.jpeg',
       'color': Color(0xFF00A651),
       'rates': [
         {'flag': '🇺🇸', 'buy': '482,8', 'sell': '489,8'},
@@ -50,8 +50,7 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
     },
     {
       'name': 'Bank CenterCredit',
-      'logo': null,
-      'logo': 'images/bcc.webp',
+      'logo': 'assets/images/bcc.webp',
       'color': Color(0xFFFF6B00),
       'rates': [
         {'flag': '🇺🇸', 'buy': '484,9', 'sell': '490,2'},
@@ -61,7 +60,7 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
     },
     {
       'name': 'ForteBank',
-      'logo': 'images/forte.webp',
+      'logo': 'assets/images/forte.webp',
       'color': Color(0xFFE30613),
       'rates': [
         {'flag': '🇺🇸', 'buy': '485', 'sell': '493'},
@@ -71,7 +70,7 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
     },
     {
       'name': 'Eurasian Bank',
-      'logo': 'images/eurasian.png',
+      'logo': 'assets/images/eurasian.png',
       'color': Color(0xFF0066CC),
       'rates': [
         {'flag': '🇺🇸', 'buy': '483,5', 'sell': '491,5'},
@@ -81,7 +80,7 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
     },
     {
       'name': 'Kaspi Bank',
-      'logo': 'images/kaspi.png',
+      'logo': 'assets/images/kaspi.png',
       'color': Color(0xFFFF0000),
       'rates': [
         {'flag': '🇺🇸', 'buy': '486', 'sell': '492'},
@@ -102,7 +101,7 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
     },
     {
       'name': 'Bereke Bank',
-      'logo': 'images/bereke.jpg',
+      'logo': 'assets/images/bereke.jpg',
       'color': Color(0xFF1E88E5),
       'rates': [
         {'flag': '🇺🇸', 'buy': '485,5', 'sell': '493,5'},
