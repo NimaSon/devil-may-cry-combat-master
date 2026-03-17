@@ -11,6 +11,7 @@ import 'stocks_screen.dart';
 import 'resources_screen.dart';
 import 'nearby_exchangers_screen.dart';
 import 'news_screen.dart';
+import 'forecast_screen.dart';
 import 'app_background.dart';
 
 class OtherScreen extends StatelessWidget {
@@ -71,6 +72,10 @@ class OtherScreen extends StatelessWidget {
           if (!isLegalEntity)
             _buildMenuItem(Icons.newspaper, 'Новости экономики', () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const NewsScreen()));
+            }),
+          if (!isLegalEntity)
+            _buildMenuItem(Icons.auto_graph, 'Прогноз курса', () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => ForecastScreen(rateHistory: rateHistory)));
             }),
           _buildMenuItem(Icons.settings, tr('settings', selectedLanguage), () {
             Navigator.push(
