@@ -24,25 +24,48 @@ class BankForecast {
 
 class ForecastViewScreen extends StatelessWidget {
   final List<BankForecast> forecasts;
+  final List<Map<String, String>> aiuBankRates;
+  final List<Map<String, dynamic>> rateHistory;
 
-  const ForecastViewScreen({super.key, required this.forecasts});
+  const ForecastViewScreen({
+    super.key,
+    required this.forecasts,
+    required this.aiuBankRates,
+    required this.rateHistory,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return AppBackground(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(title: const Text('Прогноз курса')),
-        body: forecasts.isEmpty
-            ? _buildEmpty()
-            : ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  _buildHeader(),
-                  const SizedBox(height: 16),
-                  ...forecasts.map((f) => _buildForecastCard(f)),
-                ],
-              ),
+    return DefaultTabController(
+      length: 2,
+      child: AppBackground(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            title: const Text('Прогноз курса'),
+            bottom: TabBar(
+              tabs: const [Tab(text: 'От банка'), Tab(text: 'График')],
+              indicatorColor: const Color(0xFF00C853),
+              labelColor: const Color(0xFF00C853),
+              unselectedLabelColor: Colors.white54,
+            ),
+          ),
+          body: TabBarView(
+            children: [
+              forecasts.isEmpty
+                  ? _buildEmpty()
+                  : ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        _buildHeader(),
+                        const SizedBox(height: 16),
+                        ...forecasts.map((f) => _buildForecastCard(f)),
+                      ],
+                    ),
+              _ForecastChartTab(forecasts: forecasts, aiuBankRates: aiuBankRates, rateHistory: rateHistory),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -404,6 +427,239 @@ class _ForecastManageScreenState extends State<ForecastManageScreen> {
       ),
     );
   }
+}
+
+// ─── Таб с графиком прогноза ────────────────────────────────────────────────
+
+class _ForecastChartTab extends StatelessWidget {
+  final List<BankForecast> forecasts;
+  final List<Map<String, String>> aiuBankRates;
+  final List<Map<String, dynamic>> rateHistory;
+
+  const _ForecastChartTab({
+    required this.forecasts,
+    required this.aiuBankRates,
+    required this.rateHistory,
+  });
+
+  static const _currencies = ['USD', 'EUR', 'RUB'];
+  static const _flags = {'USD': '🇺🇸', 'EUR': '🇪🇺', 'RUB': '🇷🇺'};
+
+  double _currentRate(String currency) {
+    final idx = _currencies.indexOf(currency);
+    if (idx == -1) return 0;
+    return double.tryParse((aiuBankRates[idx]['sell'] ?? '0').replaceAll(',', '.')) ?? 0;
+  }
+
+  // Автопрогноз по истории: считаем средний тренд и экстраполируем
+  double _autoTarget(String currency, double current) {
+    if (rateHistory.length < 2) return current;
+    final idx = _currencies.indexOf(currency);
+    if (idx == -1) return current;
+
+    // Берём последние 5 записей истории
+    final recent = rateHistory.take(5).toList();
+    final values = recent.map((h) {
+      final rates = h['rates'] as List<Map<String, String>>;
+      return double.tryParse((rates[idx]['sell'] ?? '0').replaceAll(',', '.')) ?? 0.0;
+    }).where((v) => v > 0).toList();
+
+    if (values.length < 2) return current;
+
+    // Средний шаг изменения
+    double totalDelta = 0;
+    for (int i = 0; i < values.length - 1; i++) {
+      totalDelta += values[i] - values[i + 1]; // новые первые
+    }
+    final avgDelta = totalDelta / (values.length - 1);
+    // Прогноз = текущий + тренд * 7 (неделя)
+    return current + avgDelta * 7;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Плашка — источник данных
+        Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                forecasts.isNotEmpty ? Icons.account_balance : Icons.auto_graph,
+                size: 16,
+                color: forecasts.isNotEmpty ? const Color(0xFF00C853) : const Color(0xFF42A5F5),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                forecasts.isNotEmpty
+                    ? 'Прогноз на основе данных банка'
+                    : 'Автоматический прогноз по истории курсов',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: forecasts.isNotEmpty ? const Color(0xFF00C853) : const Color(0xFF42A5F5),
+                ),
+              ),
+            ],
+          ),
+        ),
+        ..._currencies.map((currency) {
+          final current = _currentRate(currency);
+          if (current == 0) return const SizedBox.shrink();
+
+          // Если банк опубликовал прогноз для этой валюты — берём оттуда
+          final bankForecast = forecasts.where((f) => f.currency == currency).firstOrNull;
+          final target = bankForecast != null ? bankForecast.targetValue : _autoTarget(currency, current);
+          final isUp = target >= current;
+          final color = (target - current).abs() < 0.5
+              ? const Color(0xFF42A5F5)
+              : isUp ? const Color(0xFF00C853) : const Color(0xFFFF1744);
+          final trendText = (target - current).abs() < 0.5
+              ? 'Стабильно'
+              : isUp ? 'Ожидается рост' : 'Ожидается снижение';
+          final sourceText = bankForecast != null ? 'Прогноз банка' : 'Авто-анализ';
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 20),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: color.withOpacity(0.25)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(_flags[currency]!, style: const TextStyle(fontSize: 28)),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(currency, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                        Text(sourceText, style: TextStyle(fontSize: 11, color: color.withOpacity(0.8))),
+                      ],
+                    ),
+                    const Spacer(),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(trendText, style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w600)),
+                        Text('${current.toStringAsFixed(1)} → ${target.toStringAsFixed(1)} ₸',
+                            style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.5))),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 110,
+                  child: CustomPaint(
+                    painter: _ForecastCurvePainter(from: current, to: target, color: color),
+                    size: Size.infinite,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Сейчас', style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.4))),
+                    Text(
+                      bankForecast != null
+                          ? (bankForecast.period == 'week' ? 'Через неделю' : 'Через месяц')
+                          : 'Прогноз на неделю',
+                      style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.4)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+}
+
+class _ForecastCurvePainter extends CustomPainter {
+  final double from;
+  final double to;
+  final Color color;
+
+  _ForecastCurvePainter({required this.from, required this.to, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (from == 0) return;
+    final minVal = from < to ? from : to;
+    final maxVal = from < to ? to : from;
+    final range = (maxVal - minVal).abs();
+    final padding = range == 0 ? 10.0 : range * 0.3;
+
+    double toY(double v) {
+      final total = (maxVal + padding) - (minVal - padding);
+      return size.height - ((v - (minVal - padding)) / total) * size.height;
+    }
+
+    final points = List.generate(60, (i) {
+      final t = i / 59;
+      // плавная кривая Безье
+      final val = from + (to - from) * t;
+      return Offset(size.width * t, toY(val));
+    });
+
+    // Градиентная заливка
+    final fillPath = Path();
+    fillPath.moveTo(0, size.height);
+    fillPath.lineTo(points.first.dx, points.first.dy);
+    for (int i = 1; i < points.length; i++) {
+      final cp = Offset((points[i - 1].dx + points[i].dx) / 2, (points[i - 1].dy + points[i].dy) / 2);
+      fillPath.quadraticBezierTo(points[i - 1].dx, points[i - 1].dy, cp.dx, cp.dy);
+    }
+    fillPath.lineTo(size.width, size.height);
+    fillPath.close();
+
+    canvas.drawPath(
+      fillPath,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [color.withOpacity(0.35), color.withOpacity(0.0)],
+        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height)),
+    );
+
+    // Линия (сплошная до середины, пунктир после)
+    final solidPath = Path();
+    solidPath.moveTo(points.first.dx, points.first.dy);
+    for (int i = 1; i < 30; i++) {
+      final cp = Offset((points[i - 1].dx + points[i].dx) / 2, (points[i - 1].dy + points[i].dy) / 2);
+      solidPath.quadraticBezierTo(points[i - 1].dx, points[i - 1].dy, cp.dx, cp.dy);
+    }
+    canvas.drawPath(solidPath, Paint()..color = color..strokeWidth = 2.5..style = PaintingStyle.stroke..strokeCap = StrokeCap.round);
+
+    // Пунктир
+    final dashPaint = Paint()..color = color.withOpacity(0.5)..strokeWidth = 2..style = PaintingStyle.stroke;
+    for (int i = 30; i < points.length - 1; i++) {
+      if (i % 3 == 0) canvas.drawLine(points[i], points[i + 1], dashPaint);
+    }
+
+    // Точки: старт и цель
+    canvas.drawCircle(points.first, 5, Paint()..color = Colors.white);
+    canvas.drawCircle(points.last, 6, Paint()..color = color);
+    canvas.drawCircle(points.last, 6, Paint()..color = Colors.white..style = PaintingStyle.stroke..strokeWidth = 2);
+  }
+
+  @override
+  bool shouldRepaint(_ForecastCurvePainter old) => old.from != from || old.to != to;
 }
 
 // ─── Форма добавления/редактирования прогноза ────────────────────────────────

@@ -80,7 +80,7 @@ class OtherScreen extends StatelessWidget {
           if (!isLegalEntity)
             _buildMenuItem(Icons.auto_graph, 'Прогноз курса', () {
               Navigator.push(context, MaterialPageRoute(
-                builder: (context) => ForecastViewScreen(forecasts: bankForecasts),
+                builder: (context) => ForecastViewScreen(forecasts: bankForecasts, aiuBankRates: aiuBankRates, rateHistory: rateHistory),
               ));
             }),
           if (isLoggedIn && isLegalEntity)
