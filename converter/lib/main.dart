@@ -12,27 +12,13 @@ import 'trading_chart_screen.dart';
 import 'risk_service.dart';
 import 'forecast_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-<<<<<<< HEAD
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Supabase.initialize(
     url: 'https://tfaghwznyvveoxpqbruo.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmYWdod3pueXZ2ZW94cHFicnVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDQxNTgsImV4cCI6MjA5MDUyMDE1OH0.M3uk1bTg1WUox2_9ZvS8SEPu6L1KD5_R16HgIoAx4b4',
   );
-=======
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  await dotenv.load(fileName: ".env");
-
-  await Supabase.initialize(
-    url: dotenv.env['SUPABASE_URL']!,
-    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
-  );
-
->>>>>>> c6b75c8e2341f90e19ab07c20d38928a28d2d602
   runApp(const MyApp());
 }
 
