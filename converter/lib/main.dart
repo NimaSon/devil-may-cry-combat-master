@@ -10,11 +10,19 @@ import 'exchangers_screen.dart';
 import 'trading_chart_screen.dart';
 import 'risk_service.dart';
 import 'forecast_screen.dart';
-import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await dotenv.load(fileName: ".env");
+
+  await Supabase.initialize(
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+  );
+
   runApp(const MyApp());
 }
 
@@ -124,6 +132,8 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     _loadRates();
+
+    _testSupabaseConnection();
   }
 
   Future<void> _loadRates() async {
@@ -133,17 +143,19 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
-  Future<void> main() async {
-    WidgetsFlutterBinding.ensureInitialized();
-  
-    await dotenv.load(fileName: ".env");
-
-    await Supabase.initialize(
-      url: dotenv.env['SUPABASE_URL']!,
-      anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
-    );
-
-  runApp(const MyApp());
+  Future<void> _testSupabaseConnection() async {
+    try {
+      // Пробуем просто обратиться к клиенту Supabase (чтобы инициализациялась)
+      final response = Supabase.instance.client;
+      if (response != null) {
+        print("✅ Supabase успешно инициализирован");
+      }
+      // В Supabase 2.x URL доступен через options (если нужна трассировка): response.options.url
+      // print("Supabase URL: ${response.options.url}");
+    } catch (e) {
+      print("❌ Ошибка подключения к Supabase: $e");
+      print("Проверь файл .env и наличие интернета");
+    }
   }
 
   void _onRatesUpdate(List<Map<String, String>> newRates) {
