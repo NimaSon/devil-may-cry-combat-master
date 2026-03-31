@@ -10,6 +10,9 @@ import 'exchangers_screen.dart';
 import 'trading_chart_screen.dart';
 import 'risk_service.dart';
 import 'forecast_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() {
   runApp(const MyApp());
@@ -128,6 +131,19 @@ class _MainScreenState extends State<MainScreen> {
     setState(() {
       exchangeRates = rates;
     });
+  }
+
+  Future<void> main() async {
+    WidgetsFlutterBinding.ensureInitialized();
+  
+    await dotenv.load(fileName: ".env");
+
+    await Supabase.initialize(
+      url: dotenv.env['SUPABASE_URL']!,
+      anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+    );
+
+  runApp(const MyApp());
   }
 
   void _onRatesUpdate(List<Map<String, String>> newRates) {
