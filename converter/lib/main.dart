@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'currency_data.dart';
 import 'converter_screen.dart';
 import 'crypto_screen.dart';
@@ -14,7 +15,12 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Supabase.initialize(
+    url: 'https://tfaghwznyvveoxpqbruo.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmYWdod3pueXZ2ZW94cHFicnVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDQxNTgsImV4cCI6MjA5MDUyMDE1OH0.M3uk1bTg1WUox2_9ZvS8SEPu6L1KD5_R16HgIoAx4b4',
+  );
   runApp(const MyApp());
 }
 

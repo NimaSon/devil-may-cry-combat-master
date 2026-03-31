@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'translations.dart';
 import 'rate_management_screen.dart';
-
+import 'p2p_screen.dart';
 import 'app_background.dart';
 
 class ExchangersScreen extends StatefulWidget {
@@ -26,9 +26,22 @@ class ExchangersScreen extends StatefulWidget {
 
 enum _FilterMode { none, bestBuy, bestSell }
 
-class _ExchangersScreenState extends State<ExchangersScreen> {
+class _ExchangersScreenState extends State<ExchangersScreen> with SingleTickerProviderStateMixin {
   String _searchQuery = '';
   _FilterMode _filterMode = _FilterMode.none;
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   final List<Map<String, dynamic>> banks = [
     {
@@ -150,54 +163,76 @@ class _ExchangersScreenState extends State<ExchangersScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Text(
-                      tr('exchangers', widget.selectedLanguage),
-                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-                  ),
-                  _buildFilterButton(),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: TextField(
-                onChanged: (value) => setState(() => _searchQuery = value),
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: tr('search', widget.selectedLanguage),
-                  hintStyle: const TextStyle(color: Colors.white54),
-                  prefixIcon: const Icon(Icons.search, color: Colors.white54),
-                  filled: true,
-                  fillColor: Colors.white.withValues(alpha: 0.08),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide.none,
-                  ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: Text(
+                  tr('exchangers', widget.selectedLanguage),
+                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: filteredBanks.length,
-                itemBuilder: (context, index) {
-                  final bank = filteredBanks[index];
-                  if (bank['isOwn'] == true) {
-                    bank['rates'] = widget.aiuBankRates;
-                  }
-                  return _buildBankCard(bank);
-                },
+              const SizedBox(height: 12),
+              TabBar(
+                controller: _tabController,
+                indicatorColor: const Color(0xFF00C853),
+                labelColor: const Color(0xFF00C853),
+                unselectedLabelColor: Colors.white54,
+                indicatorSize: TabBarIndicatorSize.label,
+                tabs: const [Tab(text: 'Банки'), Tab(text: 'P2P')],
               ),
-            ),
-          ],
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    // Таб Банки
+                    Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  onChanged: (value) => setState(() => _searchQuery = value),
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: InputDecoration(
+                                    hintText: tr('search', widget.selectedLanguage),
+                                    hintStyle: const TextStyle(color: Colors.white54),
+                                    prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                                    filled: true,
+                                    fillColor: Colors.white.withValues(alpha: 0.08),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(30),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              _buildFilterButton(),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: filteredBanks.length,
+                            itemBuilder: (context, index) {
+                              final bank = filteredBanks[index];
+                              if (bank['isOwn'] == true) {
+                                bank['rates'] = widget.aiuBankRates;
+                              }
+                              return _buildBankCard(bank);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Таб P2P
+                    const P2PScreen(),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),

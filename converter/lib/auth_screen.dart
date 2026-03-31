@@ -1,19 +1,133 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app_background.dart';
+
+final _supabase = Supabase.instance.client;
 
 class AuthScreen extends StatefulWidget {
   final bool isLegalEntity;
-
   const AuthScreen({super.key, required this.isLegalEntity});
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
 }
 
-class _AuthScreenState extends State<AuthScreen> {
-  final _usernameController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
+class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  final _emailCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
+  final _confirmPassCtrl = TextEditingController();
+  bool _obscure = true;
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _emailCtrl.dispose();
+    _passCtrl.dispose();
+    _confirmPassCtrl.dispose();
+    super.dispose();
+  }
+
+  Color get _color => widget.isLegalEntity ? const Color(0xFF00C853) : const Color(0xFF42A5F5);
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg, style: const TextStyle(color: Colors.white)),
+      backgroundColor: const Color(0xFFFF1744),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ));
+  }
+
+  void _showSuccess(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg, style: const TextStyle(color: Colors.white)),
+      backgroundColor: const Color(0xFF00C853),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ));
+  }
+
+  Future<void> _login() async {
+    if (_emailCtrl.text.trim().isEmpty || _passCtrl.text.isEmpty) {
+      _showError('Заполните все поля');
+      return;
+    }
+    setState(() => _loading = true);
+    try {
+      await _supabase.auth.signInWithPassword(
+        email: _emailCtrl.text.trim(),
+        password: _passCtrl.text,
+      );
+      if (mounted) {
+        Navigator.pop(context, widget.isLegalEntity);
+        Navigator.pop(context, widget.isLegalEntity);
+      }
+    } on AuthException catch (e) {
+      _showError(e.message);
+    } catch (_) {
+      _showError('Ошибка входа. Попробуйте снова.');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _register() async {
+    if (_emailCtrl.text.trim().isEmpty || _passCtrl.text.isEmpty) {
+      _showError('Заполните все поля');
+      return;
+    }
+    if (_passCtrl.text != _confirmPassCtrl.text) {
+      _showError('Пароли не совпадают');
+      return;
+    }
+    if (_passCtrl.text.length < 6) {
+      _showError('Пароль минимум 6 символов');
+      return;
+    }
+    setState(() => _loading = true);
+    try {
+      await _supabase.auth.signUp(
+        email: _emailCtrl.text.trim(),
+        password: _passCtrl.text,
+        data: {'is_legal_entity': widget.isLegalEntity},
+      );
+      if (mounted) {
+        _showSuccess('Письмо подтверждения отправлено на ${_emailCtrl.text.trim()}');
+        _tabController.animateTo(0);
+      }
+    } on AuthException catch (e) {
+      _showError(e.message);
+    } catch (_) {
+      _showError('Ошибка регистрации. Попробуйте снова.');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _forgotPassword() async {
+    final email = _emailCtrl.text.trim();
+    if (email.isEmpty) {
+      _showError('Введите email для сброса пароля');
+      return;
+    }
+    setState(() => _loading = true);
+    try {
+      await _supabase.auth.resetPasswordForEmail(email);
+      if (mounted) _showSuccess('Письмо для сброса пароля отправлено на $email');
+    } on AuthException catch (e) {
+      _showError(e.message);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,111 +136,160 @@ class _AuthScreenState extends State<AuthScreen> {
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
-          title: Text(widget.isLegalEntity ? 'Вход для юридического лица' : 'Вход для физического лица'),
+          title: Text(widget.isLegalEntity ? 'Aiu Bank' : 'Личный кабинет'),
+          bottom: TabBar(
+            controller: _tabController,
+            indicatorColor: _color,
+            labelColor: _color,
+            unselectedLabelColor: Colors.white54,
+            tabs: const [Tab(text: 'Вход'), Tab(text: 'Регистрация')],
+          ),
         ),
-        body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: widget.isLegalEntity 
-                    ? [const Color(0xFF00C853), const Color(0xFF00E676)]
-                    : [const Color(0xFF00BFFF), const Color(0xFF1E90FF)],
-                ),
-              ),
-              child: const Center(
-                child: Icon(Icons.person, size: 50, color: Colors.white),
-              ),
-            ),
-            const SizedBox(height: 40),
-            TextField(
-              controller: _usernameController,
-              decoration: InputDecoration(
-                labelText: 'Логин или номер телефона',
-                prefixIcon: const Icon(Icons.person_outline),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              obscureText: _obscurePassword,
-              decoration: InputDecoration(
-                labelText: 'Пароль',
-                prefixIcon: const Icon(Icons.lock_outline),
-                suffixIcon: IconButton(
-                  icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                  onPressed: () {
-                    setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    });
-                  },
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context, widget.isLegalEntity);
-                Navigator.pop(context, widget.isLegalEntity);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: widget.isLegalEntity ? Colors.green : Colors.blue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                minimumSize: const Size(double.infinity, 56),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'Войти',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextButton(
-                  onPressed: () {},
-                  child: const Text(
-                    'Забыли пароль?',
-                    style: TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
-                ),
-                const Text(' • ', style: TextStyle(color: Colors.grey)),
-                TextButton(
-                  onPressed: () {},
-                  child: const Text(
-                    'Зарегистрироваться',
-                    style: TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+        body: TabBarView(
+          controller: _tabController,
+          children: [_buildLogin(), _buildRegister()],
         ),
       ),
     );
   }
 
-  @override
-  void dispose() {
-    _usernameController.dispose();
-    _passwordController.dispose();
-    super.dispose();
+  Widget _buildLogin() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          const SizedBox(height: 32),
+          _buildAvatar(),
+          const SizedBox(height: 32),
+          _emailField(),
+          const SizedBox(height: 16),
+          _passwordField(_passCtrl, 'Пароль'),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: _loading ? null : _forgotPassword,
+              child: Text('Забыли пароль?', style: TextStyle(color: _color)),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _actionButton('Войти', _login),
+          const SizedBox(height: 16),
+          TextButton(
+            onPressed: () => _tabController.animateTo(1),
+            child: Text('Нет аккаунта? Зарегистрироваться',
+                style: TextStyle(color: Colors.white.withOpacity(0.5))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRegister() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          const SizedBox(height: 32),
+          _buildAvatar(),
+          const SizedBox(height: 32),
+          _emailField(),
+          const SizedBox(height: 16),
+          _passwordField(_passCtrl, 'Пароль'),
+          const SizedBox(height: 16),
+          _passwordField(_confirmPassCtrl, 'Подтвердите пароль'),
+          const SizedBox(height: 24),
+          _actionButton('Зарегистрироваться', _register),
+          const SizedBox(height: 16),
+          TextButton(
+            onPressed: () => _tabController.animateTo(0),
+            child: Text('Уже есть аккаунт? Войти',
+                style: TextStyle(color: Colors.white.withOpacity(0.5))),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvatar() {
+    return Container(
+      width: 90,
+      height: 90,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: [_color, _color.withOpacity(0.5)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [BoxShadow(color: _color.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 8))],
+      ),
+      child: Icon(
+        widget.isLegalEntity ? Icons.account_balance : Icons.person,
+        size: 44,
+        color: Colors.white,
+      ),
+    );
+  }
+
+  Widget _emailField() {
+    return TextField(
+      controller: _emailCtrl,
+      keyboardType: TextInputType.emailAddress,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        hintText: 'Email',
+        hintStyle: const TextStyle(color: Colors.white38),
+        prefixIcon: const Icon(Icons.email_outlined, color: Colors.white38),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.07),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: _color, width: 1.5),
+        ),
+      ),
+    );
+  }
+
+  Widget _passwordField(TextEditingController ctrl, String hint) {
+    return TextField(
+      controller: ctrl,
+      obscureText: _obscure,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: Colors.white38),
+        prefixIcon: const Icon(Icons.lock_outline, color: Colors.white38),
+        suffixIcon: IconButton(
+          icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility, color: Colors.white38),
+          onPressed: () => setState(() => _obscure = !_obscure),
+        ),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.07),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: _color, width: 1.5),
+        ),
+      ),
+    );
+  }
+
+  Widget _actionButton(String label, VoidCallback onTap) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: _loading ? null : onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _color,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+        child: _loading
+            ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+            : Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+      ),
+    );
   }
 }
