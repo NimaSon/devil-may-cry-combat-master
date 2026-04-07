@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app_background.dart';
+import 'wallet_screen.dart';
 
 final _supabase = Supabase.instance.client;
 
@@ -305,6 +306,24 @@ class _P2PScreenState extends State<P2PScreen> {
             ]),
           ),
           const Spacer(),
+          // Кнопка кошелька
+          GestureDetector(
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WalletScreen())),
+            child: Container(
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF42A5F5).withOpacity(0.15),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFF42A5F5).withOpacity(0.4)),
+              ),
+              child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.account_balance_wallet_outlined, color: Color(0xFF42A5F5), size: 16),
+                SizedBox(width: 4),
+                Text('Кошелёк', style: TextStyle(fontSize: 13, color: Color(0xFF42A5F5), fontWeight: FontWeight.w600)),
+              ]),
+            ),
+          ),
           GestureDetector(
             onTap: _showCreateOffer,
             child: Container(

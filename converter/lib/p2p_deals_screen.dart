@@ -56,7 +56,34 @@ class _P2PDealsScreenState extends State<P2PDealsScreen> with SingleTickerProvid
 
   Future<void> _updateStatus(String dealId, String status) async {
     await _supabase.from('p2p_deals').update({'status': status}).eq('id', dealId);
+    // Меняем баланс при завершении сделки
+    if (status == 'completed') {
+      final deal = _deals.firstWhere((d) => d['id'] == dealId);
+      final currency = (deal['currency'] as String).toLowerCase();
+      final amount = (deal['amount'] as num).toDouble();
+      final price = (deal['price'] as num).toDouble();
+      final kztAmount = amount / price; // сколько валюты получает покупатель
+      // Продавец: отдаёт валюту, получает KZT
+      await _updateWallet(deal['seller_id'], currency, -kztAmount);
+      await _updateWallet(deal['seller_id'], 'kzt', amount);
+      // Покупатель: отдаёт KZT, получает валюту
+      await _updateWallet(deal['buyer_id'], 'kzt', -amount);
+      await _updateWallet(deal['buyer_id'], currency, kztAmount);
+    }
     _loadDeals();
+  }
+
+  Future<void> _updateWallet(String userId, String currency, double delta) async {
+    try {
+      final res = await _supabase.from('wallets').select(currency).eq('user_id', userId).maybeSingle();
+      if (res == null) {
+        await _supabase.from('wallets').insert({'user_id': userId, currency: delta < 0 ? 0 : delta});
+      } else {
+        final current = (res[currency] ?? 0).toDouble();
+        final newVal = (current + delta).clamp(0.0, double.infinity);
+        await _supabase.from('wallets').update({currency: newVal}).eq('user_id', userId);
+      }
+    } catch (_) {}
   }
 
   @override
