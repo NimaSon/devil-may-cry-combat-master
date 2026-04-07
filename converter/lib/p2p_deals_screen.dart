@@ -75,11 +75,10 @@ class _P2PDealsScreenState extends State<P2PDealsScreen> with SingleTickerProvid
 
   Future<void> _updateWallet(String userId, String currency, double delta) async {
     try {
-      var res = await _supabase.from('wallets').select().eq('user_id', userId).maybeSingle();
+      final res = await _supabase.from('wallets').select().eq('user_id', userId).maybeSingle();
       if (res == null) {
-        // Создаём кошелёк если нет
-        await _supabase.from('wallets').insert({'user_id': userId, 'kzt': 0, 'usd': 0, 'eur': 0, 'rub': 0});
-        res = await _supabase.from('wallets').select().eq('user_id', userId).single();
+        await _supabase.from('wallets').upsert({'user_id': userId, 'kzt': 0, 'usd': 0, 'eur': 0, 'rub': 0});
+        return;
       }
       final current = (res[currency] ?? 0).toDouble();
       final newVal = (current + delta).clamp(0.0, double.infinity);
