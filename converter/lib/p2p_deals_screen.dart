@@ -75,15 +75,16 @@ class _P2PDealsScreenState extends State<P2PDealsScreen> with SingleTickerProvid
 
   Future<void> _updateWallet(String userId, String currency, double delta) async {
     try {
-      final res = await _supabase.from('wallets').select(currency).eq('user_id', userId).maybeSingle();
+      var res = await _supabase.from('wallets').select().eq('user_id', userId).maybeSingle();
       if (res == null) {
-        await _supabase.from('wallets').insert({'user_id': userId, currency: delta < 0 ? 0 : delta});
-      } else {
-        final current = (res[currency] ?? 0).toDouble();
-        final newVal = (current + delta).clamp(0.0, double.infinity);
-        final updateRes = await _supabase.from('wallets').update({currency: newVal}).eq('user_id', userId).select();
-        print('UPDATE WALLET: userId=$userId currency=$currency delta=$delta newVal=$newVal result=$updateRes');
+        // Создаём кошелёк если нет
+        await _supabase.from('wallets').insert({'user_id': userId, 'kzt': 0, 'usd': 0, 'eur': 0, 'rub': 0});
+        res = await _supabase.from('wallets').select().eq('user_id', userId).single();
       }
+      final current = (res[currency] ?? 0).toDouble();
+      final newVal = (current + delta).clamp(0.0, double.infinity);
+      await _supabase.from('wallets').update({currency: newVal}).eq('user_id', userId);
+      print('WALLET OK: userId=$userId $currency $current -> $newVal');
     } catch (e) {
       print('WALLET ERROR: $e');
     }
