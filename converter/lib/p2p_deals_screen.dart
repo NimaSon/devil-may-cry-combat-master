@@ -56,19 +56,19 @@ class _P2PDealsScreenState extends State<P2PDealsScreen> with SingleTickerProvid
 
   Future<void> _updateStatus(String dealId, String status) async {
     await _supabase.from('p2p_deals').update({'status': status}).eq('id', dealId);
-    // Меняем баланс при завершении сделки
     if (status == 'completed') {
       final deal = _deals.firstWhere((d) => d['id'] == dealId);
       final currency = (deal['currency'] as String).toLowerCase();
-      final amount = (deal['amount'] as num).toDouble();
-      final price = (deal['price'] as num).toDouble();
-      final kztAmount = amount / price; // сколько валюты получает покупатель
+      final kztAmount = (deal['amount'] as num).toDouble(); // сумма в KZT которую платит покупатель
+      final price = (deal['price'] as num).toDouble(); // курс за 1 единицу валюты
+      final currencyAmount = kztAmount / price; // сколько валюты получает покупатель
+      print('DEAL: kzt=$kztAmount price=$price currency=$currencyAmount');
       // Продавец: отдаёт валюту, получает KZT
-      await _updateWallet(deal['seller_id'], currency, -kztAmount);
-      await _updateWallet(deal['seller_id'], 'kzt', amount);
+      await _updateWallet(deal['seller_id'], currency, -currencyAmount);
+      await _updateWallet(deal['seller_id'], 'kzt', kztAmount);
       // Покупатель: отдаёт KZT, получает валюту
-      await _updateWallet(deal['buyer_id'], 'kzt', -amount);
-      await _updateWallet(deal['buyer_id'], currency, kztAmount);
+      await _updateWallet(deal['buyer_id'], 'kzt', -kztAmount);
+      await _updateWallet(deal['buyer_id'], currency, currencyAmount);
     }
     _loadDeals();
   }
