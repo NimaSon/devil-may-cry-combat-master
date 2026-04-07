@@ -340,51 +340,64 @@ class _P2PScreenState extends State<P2PScreen> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(30)),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              _modeBtn('Купить', true),
-              _modeBtn('Продать', false),
-            ]),
-          ),
-          const Spacer(),
-          // Кнопка кошелька
-          GestureDetector(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WalletScreen())),
-            child: Container(
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF42A5F5).withOpacity(0.15),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFF42A5F5).withOpacity(0.4)),
+          // Строка 1: Купить/Продать
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(30)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  _modeBtn('Купить', true),
+                  _modeBtn('Продать', false),
+                ]),
               ),
-              child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.account_balance_wallet_outlined, color: Color(0xFF42A5F5), size: 16),
-                SizedBox(width: 4),
-                Text('Кошелёк', style: TextStyle(fontSize: 13, color: Color(0xFF42A5F5), fontWeight: FontWeight.w600)),
-              ]),
-            ),
+            ],
           ),
-          GestureDetector(
-            onTap: _showCreateOffer,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF00C853).withOpacity(0.15),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFF00C853).withOpacity(0.4)),
+          const SizedBox(height: 8),
+          // Строка 2: Кошелёк + Объявление
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WalletScreen())),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF42A5F5).withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFF42A5F5).withOpacity(0.4)),
+                    ),
+                    child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Icon(Icons.account_balance_wallet_outlined, color: Color(0xFF42A5F5), size: 16),
+                      SizedBox(width: 6),
+                      Text('Кошелёк', style: TextStyle(fontSize: 13, color: Color(0xFF42A5F5), fontWeight: FontWeight.w600)),
+                    ]),
+                  ),
+                ),
               ),
-              child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.add, color: Color(0xFF00C853), size: 16),
-                SizedBox(width: 4),
-                Text('Объявление', style: TextStyle(fontSize: 13, color: Color(0xFF00C853), fontWeight: FontWeight.w600)),
-              ]),
-            ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: GestureDetector(
+                  onTap: _showCreateOffer,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00C853).withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFF00C853).withOpacity(0.4)),
+                    ),
+                    child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Icon(Icons.add, color: Color(0xFF00C853), size: 16),
+                      SizedBox(width: 6),
+                      Text('Объявление', style: TextStyle(fontSize: 13, color: Color(0xFF00C853), fontWeight: FontWeight.w600)),
+                    ]),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
