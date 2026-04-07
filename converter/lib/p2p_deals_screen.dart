@@ -81,9 +81,12 @@ class _P2PDealsScreenState extends State<P2PDealsScreen> with SingleTickerProvid
       } else {
         final current = (res[currency] ?? 0).toDouble();
         final newVal = (current + delta).clamp(0.0, double.infinity);
-        await _supabase.from('wallets').update({currency: newVal}).eq('user_id', userId);
+        final updateRes = await _supabase.from('wallets').update({currency: newVal}).eq('user_id', userId).select();
+        print('UPDATE WALLET: userId=$userId currency=$currency delta=$delta newVal=$newVal result=$updateRes');
       }
-    } catch (_) {}
+    } catch (e) {
+      print('WALLET ERROR: $e');
+    }
   }
 
   @override
