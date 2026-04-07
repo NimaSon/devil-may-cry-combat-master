@@ -355,7 +355,7 @@ class _P2PChatScreenState extends State<P2PChatScreen> {
           .from('messages')
           .select()
           .eq('deal_id', _dealId)
-          .order('created_at');
+          .order('created_at', ascending: true);
       setState(() => _messages = List<Map<String, dynamic>>.from(res));
       _scrollToBottom();
     } catch (_) {}
@@ -371,9 +371,18 @@ class _P2PChatScreenState extends State<P2PChatScreen> {
           filter: PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'deal_id', value: _dealId),
           callback: (payload) {
             final newMsg = payload.newRecord;
-            if (!_messages.any((m) => m['id'] == newMsg['id'])) {
+            // Не добавляем если уже есть с таким id или это наше сообщение (уже добавлено локально)
+            final alreadyExists = _messages.any((m) => m['id'] == newMsg['id']);
+            final isOwnMsg = newMsg['sender_id'] == _uid;
+            if (!alreadyExists && !isOwnMsg) {
               setState(() => _messages.add(newMsg));
               _scrollToBottom();
+            } else if (!alreadyExists && isOwnMsg) {
+              // Заменяем временное сообщение на реальное если ещё не заменено
+              setState(() {
+                final tempIdx = _messages.indexWhere((m) => m['id'].toString().startsWith('temp_') && m['text'] == newMsg['text']);
+                if (tempIdx != -1) _messages[tempIdx] = newMsg;
+              });
             }
           },
         )
@@ -393,12 +402,28 @@ class _P2PChatScreenState extends State<P2PChatScreen> {
     final text = _msgCtrl.text.trim();
     if (text.isEmpty) return;
     _msgCtrl.clear();
+    // Добавляем локально сразу
+    final tempMsg = {
+      'id': 'temp_${DateTime.now().millisecondsSinceEpoch}',
+      'deal_id': _dealId,
+      'sender_id': _uid,
+      'sender_username': _username,
+      'text': text,
+      'created_at': DateTime.now().toIso8601String(),
+    };
+    setState(() => _messages.add(tempMsg));
+    _scrollToBottom();
     try {
-      await _supabase.from('messages').insert({
+      final res = await _supabase.from('messages').insert({
         'deal_id': _dealId,
         'sender_id': _uid,
         'sender_username': _username,
         'text': text,
+      }).select().single();
+      // Заменяем временное на реальное
+      setState(() {
+        final idx = _messages.indexWhere((m) => m['id'] == tempMsg['id']);
+        if (idx != -1) _messages[idx] = res;
       });
     } catch (_) {}
   }
