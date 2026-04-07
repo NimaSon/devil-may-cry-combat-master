@@ -13,6 +13,7 @@ import 'nearby_exchangers_screen.dart';
 import 'news_screen.dart';
 import 'forecast_screen.dart';
 import 'wallet_screen.dart';
+import 'p2p_deals_screen.dart';
 import 'app_background.dart';
 
 class OtherScreen extends StatelessWidget {
@@ -69,6 +70,10 @@ class OtherScreen extends StatelessWidget {
           if (!isLegalEntity)
             _buildMenuItem(Icons.account_balance_wallet, 'Кошелёк', () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const WalletScreen()));
+            }),
+          if (!isLegalEntity)
+            _buildMenuItem(Icons.handshake_outlined, 'Мои сделки P2P', () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const P2PDealsScreen()));
             }),
           if (!isLegalEntity)
             _buildMenuItem(Icons.location_on, 'Ближайшие обменники', () {
