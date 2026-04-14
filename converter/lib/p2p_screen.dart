@@ -316,26 +316,21 @@ class _P2PScreenState extends State<P2PScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _buildHeader(),
-        _buildFilters(),
-        Expanded(
-          child: _loading
-              ? const Center(child: CircularProgressIndicator(color: Color(0xFF00C853)))
-              : _offers.isEmpty
-                  ? _buildEmpty()
-                  : RefreshIndicator(
-                      onRefresh: _loadOffers,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                        itemCount: _offers.length,
-                        itemBuilder: (ctx, i) => _buildCard(_offers[i]),
-                      ),
-                    ),
-        ),
-      ],
-    );
+    return _loading
+        ? const Center(child: CircularProgressIndicator(color: Color(0xFF00C853)))
+        : RefreshIndicator(
+            onRefresh: _loadOffers,
+            child: ListView.builder(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              itemCount: _offers.isEmpty ? 3 : _offers.length + 2,
+              itemBuilder: (ctx, i) {
+                if (i == 0) return _buildHeader();
+                if (i == 1) return _buildFilters();
+                if (_offers.isEmpty) return _buildEmpty();
+                return _buildCard(_offers[i - 2]);
+              },
+            ),
+          );
   }
 
   Widget _buildHeader() {
