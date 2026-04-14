@@ -68,15 +68,15 @@ class OtherScreen extends StatelessWidget {
             onNavigateToHome();
           }),
           if (!isLegalEntity)
-            _buildMenuItem(Icons.account_balance_wallet, 'Кошелёк', () {
+            _buildMenuItem(Icons.account_balance_wallet, tr('wallet', selectedLanguage), () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const WalletScreen()));
             }),
           if (!isLegalEntity)
-            _buildMenuItem(Icons.handshake_outlined, 'Мои сделки P2P', () {
+            _buildMenuItem(Icons.handshake_outlined, tr('myP2PDeals', selectedLanguage), () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const P2PDealsScreen()));
             }),
           if (!isLegalEntity)
-            _buildMenuItem(Icons.location_on, 'Ближайшие обменники', () {
+            _buildMenuItem(Icons.location_on, tr('nearbyExchangers', selectedLanguage), () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const NearbyExchangersScreen()));
             }),
           if (isLoggedIn && isLegalEntity)
@@ -84,17 +84,17 @@ class OtherScreen extends StatelessWidget {
               onNavigateToChart();
             }),
           if (!isLegalEntity)
-            _buildMenuItem(Icons.newspaper, 'Новости экономики', () {
+            _buildMenuItem(Icons.newspaper, tr('economicNews', selectedLanguage), () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const NewsScreen()));
             }),
           if (!isLegalEntity)
-            _buildMenuItem(Icons.auto_graph, 'Прогноз курса', () {
+            _buildMenuItem(Icons.auto_graph, tr('forecastRate', selectedLanguage), () {
               Navigator.push(context, MaterialPageRoute(
                 builder: (context) => ForecastViewScreen(forecasts: bankForecasts, aiuBankRates: aiuBankRates, rateHistory: rateHistory),
               ));
             }),
           if (isLoggedIn && isLegalEntity)
-            _buildMenuItem(Icons.auto_graph, 'Прогноз курса', () {
+            _buildMenuItem(Icons.auto_graph, tr('forecastManage', selectedLanguage), () {
               Navigator.push(context, MaterialPageRoute(
                 builder: (context) => ForecastManageScreen(
                   forecasts: bankForecasts,
@@ -116,7 +116,7 @@ class OtherScreen extends StatelessWidget {
             );
           }),
           if (isLoggedIn && isLegalEntity)
-            _buildMenuItem(Icons.leaderboard, 'Курсы конкурентов', () {
+            _buildMenuItem(Icons.leaderboard, tr('competitorRates', selectedLanguage), () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -125,7 +125,7 @@ class OtherScreen extends StatelessWidget {
               );
             }),
           if (isLoggedIn && isLegalEntity)
-            _buildMenuItem(Icons.store, 'Мой обменник', () {
+            _buildMenuItem(Icons.store, tr('myExchanger', selectedLanguage), () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -137,7 +137,7 @@ class OtherScreen extends StatelessWidget {
               );
             }),
           if (isLoggedIn && isLegalEntity)
-            _buildMenuItem(Icons.history, 'История изменения курсов', () {
+            _buildMenuItem(Icons.history, tr('rateHistory', selectedLanguage), () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -146,9 +146,9 @@ class OtherScreen extends StatelessWidget {
               );
             }),
           if (isLoggedIn && isLegalEntity)
-            _buildMenuItem(Icons.sell, 'Мои продажи', () {}),
+            _buildMenuItem(Icons.sell, tr('mySales', selectedLanguage), () {}),
           if (isLoggedIn && isLegalEntity)
-            _buildMenuItem(Icons.warning_amber_rounded, 'Уведомления о рисках', () {
+            _buildMenuItem(Icons.warning_amber_rounded, tr('riskNotifications', selectedLanguage), () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -184,7 +184,7 @@ class OtherScreen extends StatelessWidget {
                 ),
               ),
               child: Text(
-                isLoggedIn ? 'Выход' : 'Вход',
+                isLoggedIn ? tr('logout', selectedLanguage) : tr('login', selectedLanguage),
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
