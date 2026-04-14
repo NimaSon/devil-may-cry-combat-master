@@ -421,68 +421,130 @@ class _P2PScreenState extends State<P2PScreen> {
   }
 
   Widget _buildFilters() {
-    return Column(
-      children: [
-        // Переключатель режима фильтра
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-          child: Row(
-            children: [
-              _filterBtn('Основные', 'main'),
-              const SizedBox(width: 8),
-              _filterBtn('Избранные', 'fav'),
-              const SizedBox(width: 8),
-              _filterBtn('Все', 'all'),
-            ],
-          ),
-        ),
-        // Список валют
-        SizedBox(
-          height: 36,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            children: _filterCurrencies.map((c) {
-              final selected = _currency == c;
-              return GestureDetector(
-                onTap: () { setState(() => _currency = c); _loadOffers(); },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: selected ? const Color(0xFF00C853).withOpacity(0.15) : Colors.white.withOpacity(0.07),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: selected ? const Color(0xFF00C853) : Colors.white.withOpacity(0.1)),
-                  ),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Text(_flag(c), style: const TextStyle(fontSize: 13)),
-                    const SizedBox(width: 4),
-                    Text(c, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: selected ? const Color(0xFF00C853) : Colors.white70)),
-                  ]),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: _showFilterSheet,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF42A5F5).withOpacity(0.15),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFF42A5F5).withOpacity(0.4)),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.tune, color: Color(0xFF42A5F5), size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  '${_flag(_currency)} $_currency · ${_filterMode == 'main' ? 'Основные' : _filterMode == 'fav' ? 'Избранные' : 'Все'}',
+                  style: const TextStyle(fontSize: 13, color: Color(0xFF42A5F5), fontWeight: FontWeight.w600),
                 ),
-              );
-            }).toList(),
+              ]),
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _filterBtn(String label, String mode) {
+  void _showFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF0D1B2A),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 20),
+              const Text('Фильтр', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+              const SizedBox(height: 16),
+              const Text('Категория', style: TextStyle(fontSize: 13, color: Colors.white54)),
+              const SizedBox(height: 8),
+              Row(children: [
+                _filterBtn('Основные', 'main', setS),
+                const SizedBox(width: 8),
+                _filterBtn('Избранные', 'fav', setS),
+                const SizedBox(width: 8),
+                _filterBtn('Все', 'all', setS),
+              ]),
+              const SizedBox(height: 16),
+              const Text('Валюта', style: TextStyle(fontSize: 13, color: Colors.white54)),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 36,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: _filterCurrencies.map((c) {
+                    final selected = _currency == c;
+                    return GestureDetector(
+                      onTap: () => setS(() => _currency = c),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        margin: const EdgeInsets.only(right: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: selected ? const Color(0xFF00C853).withOpacity(0.15) : Colors.white.withOpacity(0.07),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: selected ? const Color(0xFF00C853) : Colors.white.withOpacity(0.1)),
+                        ),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Text(_flag(c), style: const TextStyle(fontSize: 13)),
+                          const SizedBox(width: 4),
+                          Text(c, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: selected ? const Color(0xFF00C853) : Colors.white70)),
+                        ]),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    setState(() {});
+                    _loadOffers();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00C853),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: const Text('Применить', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _filterBtn(String label, String mode, StateSetter setS) {
     final selected = _filterMode == mode;
     return GestureDetector(
-      onTap: () => setState(() => _filterMode = mode),
+      onTap: () => setS(() => _filterMode = mode),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: selected ? const Color(0xFF42A5F5).withOpacity(0.2) : Colors.white.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(color: selected ? const Color(0xFF42A5F5) : Colors.white.withOpacity(0.08)),
         ),
-        child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: selected ? const Color(0xFF42A5F5) : Colors.white38)),
+        child: Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: selected ? const Color(0xFF42A5F5) : Colors.white38)),
       ),
     );
   }
