@@ -207,7 +207,7 @@ final Map<String, Map<String, String>> translations = {
     'allRates': 'Барлық валюта бағамдары',
     'tradingChart': 'Сауда графигі',
     'resources': 'Ресурстар',
-    'archive': 'Ақша валютасы мұрағаты',
+    'archive': 'Валюта мұрағаты',
     'stocks': 'Акциялар',
     'edit': 'Өзгерту',
     'all': 'Барлығы',

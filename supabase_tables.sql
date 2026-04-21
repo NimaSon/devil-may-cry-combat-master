@@ -170,6 +170,16 @@ CREATE TABLE stocks (
     last_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Таблица избранных валют пользователей
+CREATE TABLE user_favorites (
+    id SERIAL PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    currency_code VARCHAR(10) NOT NULL,
+    currency_type VARCHAR(20) DEFAULT 'fiat', -- 'fiat' или 'crypto'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, currency_code, currency_type)
+);
+
 -- Индексы для производительности
 CREATE INDEX idx_exchange_rates_from_currency ON exchange_rates(from_currency);
 CREATE INDEX idx_exchange_rates_to_currency ON exchange_rates(to_currency);
@@ -198,6 +208,7 @@ ALTER TABLE wallet_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE competitors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE forecasts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE stocks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_favorites ENABLE ROW LEVEL SECURITY;
 
 -- Политики для exchangers (пользователи могут видеть и редактировать только свои обменники)
 CREATE POLICY "Users can view all exchangers" ON exchangers FOR SELECT USING (true);
@@ -248,6 +259,11 @@ CREATE POLICY "Public read rate_history" ON rate_history FOR SELECT USING (true)
 CREATE POLICY "Public read competitors" ON competitors FOR SELECT USING (true);
 CREATE POLICY "Public read forecasts" ON forecasts FOR SELECT USING (true);
 CREATE POLICY "Public read stocks" ON stocks FOR SELECT USING (true);
+
+-- Политики для user_favorites
+CREATE POLICY "Users can view their favorites" ON user_favorites FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert their favorites" ON user_favorites FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete their favorites" ON user_favorites FOR DELETE USING (auth.uid() = user_id);
 
 -- Функции для обновления updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
