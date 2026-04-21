@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'app_background.dart';
+import 'l10n_service.dart';
 
 class LanguageSelectionScreen extends StatefulWidget {
   final String selectedLanguage;
@@ -48,7 +49,10 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
           title: const Text('Изменение языка'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context, _selectedLanguage),
+              onPressed: () async {
+                await L10n.setLocaleAndSave(Locale(_selectedLanguage));
+                Navigator.pop(context, _selectedLanguage);
+              },
               child: const Text('Готово', style: TextStyle(fontSize: 16)),
             ),
           ],

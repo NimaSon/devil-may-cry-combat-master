@@ -3,19 +3,16 @@ import 'country_selection_screen.dart';
 import 'language_selection_screen.dart';
 import 'translations.dart';
 import 'app_background.dart';
+import 'l10n_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   final String selectedCountry;
-  final String selectedLanguage;
   final Function(String) onCountryChanged;
-  final Function(String) onLanguageChanged;
 
   const SettingsScreen({
     super.key,
     required this.selectedCountry,
-    required this.selectedLanguage,
     required this.onCountryChanged,
-    required this.onLanguageChanged,
   });
 
   @override
@@ -23,17 +20,17 @@ class SettingsScreen extends StatelessWidget {
     return AppBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(backgroundColor: Colors.transparent, title: Text(tr('settings', selectedLanguage))),
+        appBar: AppBar(backgroundColor: Colors.transparent, title: Text(tr('settings', L10n.locale.languageCode))),
         body: ListView(
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Text(tr('basics', selectedLanguage), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+            child: Text(tr('basics', L10n.locale.languageCode), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
           ),
           _buildMenuItem(
             context,
             Icons.public,
-            tr('country', selectedLanguage),
+            tr('country', L10n.locale.languageCode),
             _getCountryName(selectedCountry),
             () async {
               final result = await Navigator.push(
@@ -50,32 +47,29 @@ class SettingsScreen extends StatelessWidget {
           _buildMenuItem(
             context,
             Icons.star,
-            tr('favorites', selectedLanguage),
-            tr('changeFavorites', selectedLanguage),
+            tr('favorites', L10n.locale.languageCode),
+            tr('changeFavorites', L10n.locale.languageCode),
             () {},
           ),
           _buildMenuItem(
             context,
             Icons.language,
-            tr('language', selectedLanguage),
-            _getLanguageName(selectedLanguage),
+            tr('language', L10n.locale.languageCode),
+            _getLanguageName(L10n.locale.languageCode),
             () async {
-              final result = await Navigator.push(
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => LanguageSelectionScreen(selectedLanguage: selectedLanguage),
+                  builder: (context) => LanguageSelectionScreen(selectedLanguage: L10n.locale.languageCode),
                 ),
               );
-              if (result != null) {
-                onLanguageChanged(result);
-              }
             },
           ),
           _buildMenuItem(
             context,
             Icons.notifications,
-            tr('notifications', selectedLanguage),
-            tr('enabled', selectedLanguage),
+            tr('notifications', L10n.locale.languageCode),
+            tr('enabled', L10n.locale.languageCode),
             () {},
           ),
         ],

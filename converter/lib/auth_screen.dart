@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app_background.dart';
+import 'l10n_service.dart';
 
 final _supabase = Supabase.instance.client;
 
@@ -39,7 +40,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
 
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: const TextStyle(color: Colors.white)),
+      content: Text(t(msg), style: const TextStyle(color: Colors.white)),
       backgroundColor: const Color(0xFFFF1744),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -48,7 +49,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
 
   void _showSuccess(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: const TextStyle(color: Colors.white)),
+      content: Text(t(msg), style: const TextStyle(color: Colors.white)),
       backgroundColor: const Color(0xFF00C853),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -57,7 +58,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
 
   Future<void> _login() async {
     if (_emailCtrl.text.trim().isEmpty || _passCtrl.text.isEmpty) {
-      _showError('Заполните все поля');
+      _showError('auth_fill');
       return;
     }
     setState(() => _loading = true);
@@ -73,7 +74,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     } on AuthException catch (e) {
       _showError(e.message);
     } catch (_) {
-      _showError('Ошибка входа. Попробуйте снова.');
+      _showError('auth_err');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -81,15 +82,15 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
 
   Future<void> _register() async {
     if (_emailCtrl.text.trim().isEmpty || _passCtrl.text.isEmpty) {
-      _showError('Заполните все поля');
+      _showError('auth_fill');
       return;
     }
     if (_passCtrl.text != _confirmPassCtrl.text) {
-      _showError('Пароли не совпадают');
+      _showError('auth_mismatch');
       return;
     }
     if (_passCtrl.text.length < 6) {
-      _showError('Пароль минимум 6 символов');
+      _showError('auth_short');
       return;
     }
     setState(() => _loading = true);
@@ -100,13 +101,13 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         data: {'is_legal_entity': widget.isLegalEntity},
       );
       if (mounted) {
-        _showSuccess('Письмо подтверждения отправлено на ${_emailCtrl.text.trim()}');
+        _showSuccess('${t('auth_sent')} ${_emailCtrl.text.trim()}');
         _tabController.animateTo(0);
       }
     } on AuthException catch (e) {
       _showError(e.message);
     } catch (_) {
-      _showError('Ошибка регистрации. Попробуйте снова.');
+      _showError('auth_err');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -115,13 +116,13 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   Future<void> _forgotPassword() async {
     final email = _emailCtrl.text.trim();
     if (email.isEmpty) {
-      _showError('Введите email для сброса пароля');
+      _showError('auth_reset_email');
       return;
     }
     setState(() => _loading = true);
     try {
       await _supabase.auth.resetPasswordForEmail(email);
-      if (mounted) _showSuccess('Письмо для сброса пароля отправлено на $email');
+      if (mounted) _showSuccess('${t('auth_reset_sent')} $email');
     } on AuthException catch (e) {
       _showError(e.message);
     } finally {
@@ -131,24 +132,27 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    return AppBackground(
-      child: Scaffold(
+    return ValueListenableBuilder(
+      valueListenable: L10n.localeNotifier,
+      builder: (context, locale, _) => AppBackground(
+        child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
-          title: Text(widget.isLegalEntity ? 'Aiu Bank' : 'Личный кабинет'),
+          title: Text(widget.isLegalEntity ? t('auth_bank') : t('auth_cabinet')),
           bottom: TabBar(
             controller: _tabController,
             indicatorColor: _color,
             labelColor: _color,
             unselectedLabelColor: Colors.white54,
-            tabs: const [Tab(text: 'Вход'), Tab(text: 'Регистрация')],
+            tabs: [Tab(text: t('auth_login')), Tab(text: t('auth_reg'))],
           ),
         ),
         body: TabBarView(
           controller: _tabController,
           children: [_buildLogin(), _buildRegister()],
         ),
+      ),
       ),
     );
   }
@@ -163,21 +167,21 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           const SizedBox(height: 32),
           _emailField(),
           const SizedBox(height: 16),
-          _passwordField(_passCtrl, 'Пароль'),
+          _passwordField(_passCtrl, t('auth_pass')),
           const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: _loading ? null : _forgotPassword,
-              child: Text('Забыли пароль?', style: TextStyle(color: _color)),
+              child: Text(t('auth_forgot'), style: TextStyle(color: _color)),
             ),
           ),
           const SizedBox(height: 16),
-          _actionButton('Войти', _login),
+          _actionButton(t('auth_login'), _login),
           const SizedBox(height: 16),
           TextButton(
             onPressed: () => _tabController.animateTo(1),
-            child: Text('Нет аккаунта? Зарегистрироваться',
+            child: Text(t('auth_no_acc'),
                 style: TextStyle(color: Colors.white.withOpacity(0.5))),
           ),
         ],
@@ -195,15 +199,15 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           const SizedBox(height: 32),
           _emailField(),
           const SizedBox(height: 16),
-          _passwordField(_passCtrl, 'Пароль'),
+          _passwordField(_passCtrl, t('auth_pass')),
           const SizedBox(height: 16),
-          _passwordField(_confirmPassCtrl, 'Подтвердите пароль'),
+          _passwordField(_confirmPassCtrl, t('auth_confirm_pass')),
           const SizedBox(height: 24),
-          _actionButton('Зарегистрироваться', _register),
+          _actionButton(t('auth_reg'), _register),
           const SizedBox(height: 16),
           TextButton(
             onPressed: () => _tabController.animateTo(0),
-            child: Text('Уже есть аккаунт? Войти',
+            child: Text(t('auth_have_acc'),
                 style: TextStyle(color: Colors.white.withOpacity(0.5))),
           ),
         ],

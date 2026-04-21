@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app_background.dart';
 import 'wallet_screen.dart';
 import 'currency_data.dart';
+import 'l10n_service.dart';
 
 final _supabase = Supabase.instance.client;
 
@@ -58,13 +59,13 @@ class _P2PScreenState extends State<P2PScreen> {
 
   Future<void> _deleteOffer(String id) async {
     await _supabase.from('p2p_offers').update({'is_active': false}).eq('id', id);
-    _showSnack('Объявление удалено', const Color(0xFFFF1744));
+    _showSnack(t('p2p_deleted'), const Color(0xFFFF1744));
     _loadOffers();
   }
 
   void _showCreateOffer({Map<String, dynamic>? existing}) {
     if (_uid.isEmpty) {
-      _showSnack('Войдите в аккаунт чтобы создать объявление', const Color(0xFFFF1744));
+      _showSnack(t('p2p_login_req'), const Color(0xFFFF1744));
       return;
     }
     String type = existing?['type'] ?? 'sell';
@@ -98,24 +99,24 @@ class _P2PScreenState extends State<P2PScreen> {
                 children: [
                   Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)))),
                   const SizedBox(height: 20),
-                  const Text('Создать объявление', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                  Text(t('p2p_create_title'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
                   const SizedBox(height: 20),
-                  const Text('Тип', style: TextStyle(fontSize: 13, color: Colors.white54)),
+                  Text(t('p2p_type'), style: const TextStyle(fontSize: 13, color: Colors.white54)),
                   const SizedBox(height: 8),
                   Row(children: [
-                    _chip('Продаю', type == 'sell', const Color(0xFF00C853), () => setS(() => type = 'sell')),
+                    _chip(t('p2p_selling'), type == 'sell', const Color(0xFF00C853), () => setS(() => type = 'sell')),
                     const SizedBox(width: 8),
-                    _chip('Покупаю', type == 'buy', const Color(0xFFFF1744), () => setS(() => type = 'buy')),
+                    _chip(t('p2p_buying'), type == 'buy', const Color(0xFFFF1744), () => setS(() => type = 'buy')),
                   ]),
                   const SizedBox(height: 16),
-                  const Text('Валюта', style: TextStyle(fontSize: 13, color: Colors.white54)),
+                  Text(t('p2p_curr'), style: const TextStyle(fontSize: 13, color: Colors.white54)),
                   const SizedBox(height: 8),
                   // Поиск валюты
                   TextField(
                     onChanged: (v) => setS(() => searchQuery = v.toUpperCase()),
                     style: const TextStyle(color: Colors.white, fontSize: 13),
                     decoration: InputDecoration(
-                      hintText: 'Поиск валюты...',
+                      hintText: t('p2p_search'),
                       hintStyle: const TextStyle(color: Colors.white24, fontSize: 13),
                       prefixIcon: const Icon(Icons.search, color: Colors.white38, size: 18),
                       filled: true,
@@ -138,7 +139,7 @@ class _P2PScreenState extends State<P2PScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text('Методы оплаты', style: TextStyle(fontSize: 13, color: Colors.white54)),
+                  Text(t('p2p_methods'), style: const TextStyle(fontSize: 13, color: Colors.white54)),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8, runSpacing: 8,
@@ -160,15 +161,15 @@ class _P2PScreenState extends State<P2PScreen> {
                     }).toList(),
                   ),
                   const SizedBox(height: 16),
-                  _field(priceCtrl, 'Курс (₸ за 1 $currency)'),
+                  _field(priceCtrl, t('p2p_rate_hint', {'c': currency})),
                   const SizedBox(height: 12),
                   Row(children: [
-                    Expanded(child: _field(minCtrl, 'Мин. лимит ₸')),
+                    Expanded(child: _field(minCtrl, t('p2p_min'))),
                     const SizedBox(width: 12),
-                    Expanded(child: _field(maxCtrl, 'Макс. лимит ₸')),
+                    Expanded(child: _field(maxCtrl, t('p2p_max'))),
                   ]),
                   const SizedBox(height: 12),
-                  _field(availCtrl, 'Доступно $currency'),
+                  _field(availCtrl, '${t('p2p_avail')} $currency'),
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
@@ -179,7 +180,7 @@ class _P2PScreenState extends State<P2PScreen> {
                         final max = double.tryParse(maxCtrl.text.replaceAll(',', '.'));
                         final avail = double.tryParse(availCtrl.text.replaceAll(',', '.'));
                         if (price == null || min == null || max == null || avail == null) {
-                          _showSnack('Заполните все поля', const Color(0xFFFF1744));
+                          _showSnack(t('auth_fill'), const Color(0xFFFF1744));
                           return;
                         }
                         if (existing != null) {
@@ -188,7 +189,7 @@ class _P2PScreenState extends State<P2PScreen> {
                             'limit_min': min, 'limit_max': max, 'available': avail,
                             'pay_methods': selectedMethods,
                           }).eq('id', existing['id']);
-                          _showSnack('Объявление обновлено!', const Color(0xFF42A5F5));
+                          _showSnack(t('p2p_save'), const Color(0xFF42A5F5));
                         } else {
                           await _supabase.from('p2p_offers').insert({
                             'user_id': _uid, 'username': _username,
@@ -196,7 +197,7 @@ class _P2PScreenState extends State<P2PScreen> {
                             'limit_min': min, 'limit_max': max, 'available': avail,
                             'pay_methods': selectedMethods,
                           });
-                          _showSnack('Объявление опубликовано!', const Color(0xFF00C853));
+                          _showSnack(t('p2p_publish'), const Color(0xFF00C853));
                         }
                         Navigator.pop(ctx);
                         _loadOffers();
@@ -206,7 +207,7 @@ class _P2PScreenState extends State<P2PScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
-                      child: Text(existing != null ? 'Сохранить' : 'Опубликовать', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                      child: Text(existing != null ? t('p2p_save') : t('p2p_publish'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                     ),
                   ),
                 ],
@@ -256,15 +257,15 @@ class _P2PScreenState extends State<P2PScreen> {
                 ],
               ),
               const SizedBox(height: 6),
-              Text('Лимит: ${offer['limit_min']} – ${offer['limit_max']} ₸', style: const TextStyle(fontSize: 13, color: Colors.white38)),
-              Text('Доступно: ${offer['available']} ${offer['currency']}', style: const TextStyle(fontSize: 13, color: Colors.white38)),
+              Text('${t('p2p_limit')}: ${offer['limit_min']} – ${offer['limit_max']} ₸', style: const TextStyle(fontSize: 13, color: Colors.white38)),
+              Text('${t('p2p_avail')}: ${offer['available']} ${offer['currency']}', style: const TextStyle(fontSize: 13, color: Colors.white38)),
               const SizedBox(height: 20),
               TextField(
                 controller: amountCtrl,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
-                  hintText: 'Сумма в ₸',
+                  hintText: t('p2p_sum_kzt'),
                   hintStyle: const TextStyle(color: Colors.white24),
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.07),
@@ -293,7 +294,7 @@ class _P2PScreenState extends State<P2PScreen> {
                         'status': 'pending',
                       });
                       Navigator.pop(ctx);
-                      _showSnack('Заявка отправлена продавцу ${offer['username']}! Перейдите в "Мои сделки"', actionColor);
+                      _showSnack(t('p2p_request_sent', {'u': offer['username']}), actionColor);
                     } catch (e) {
                       _showSnack('Ошибка: $e', const Color(0xFFFF1744));
                     }
@@ -303,7 +304,7 @@ class _P2PScreenState extends State<P2PScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: Text(_isBuy ? 'Купить ${offer['currency']}' : 'Продать ${offer['currency']}',
+                  child: Text(_isBuy ? '${t('p2p_buy')} ${offer['currency']}' : '${t('p2p_sell')} ${offer['currency']}',
                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
               ),
@@ -316,21 +317,24 @@ class _P2PScreenState extends State<P2PScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return _loading
-        ? const Center(child: CircularProgressIndicator(color: Color(0xFF00C853)))
-        : RefreshIndicator(
-            onRefresh: _loadOffers,
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              itemCount: _offers.isEmpty ? 3 : _offers.length + 2,
-              itemBuilder: (ctx, i) {
-                if (i == 0) return _buildHeader();
-                if (i == 1) return _buildFilters();
-                if (_offers.isEmpty) return _buildEmpty();
-                return _buildCard(_offers[i - 2]);
-              },
+    return ValueListenableBuilder(
+      valueListenable: L10n.localeNotifier,
+      builder: (context, locale, _) => _loading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF00C853)))
+          : RefreshIndicator(
+              onRefresh: _loadOffers,
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                itemCount: _offers.isEmpty ? 3 : _offers.length + 2,
+                itemBuilder: (ctx, i) {
+                  if (i == 0) return _buildHeader();
+                  if (i == 1) return _buildFilters();
+                  if (_offers.isEmpty) return _buildEmpty();
+                  return _buildCard(_offers[i - 2]);
+                },
+              ),
             ),
-          );
+    );
   }
 
   Widget _buildHeader() {
@@ -345,8 +349,8 @@ class _P2PScreenState extends State<P2PScreen> {
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(30)),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  _modeBtn('Купить', true),
-                  _modeBtn('Продать', false),
+                  _modeBtn(t('p2p_buy'), true),
+                  _modeBtn(t('p2p_sell'), false),
                 ]),
               ),
             ],
@@ -368,7 +372,7 @@ class _P2PScreenState extends State<P2PScreen> {
                     child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                       Icon(Icons.account_balance_wallet_outlined, color: Color(0xFF42A5F5), size: 16),
                       SizedBox(width: 6),
-                      Text('Кошелёк', style: TextStyle(fontSize: 13, color: Color(0xFF42A5F5), fontWeight: FontWeight.w600)),
+                      Text('p2p_wallet', style: TextStyle(fontSize: 13, color: Color(0xFF42A5F5), fontWeight: FontWeight.w600)),
                     ]),
                   ),
                 ),
@@ -387,7 +391,7 @@ class _P2PScreenState extends State<P2PScreen> {
                     child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                       Icon(Icons.add, color: Color(0xFF00C853), size: 16),
                       SizedBox(width: 6),
-                      Text('Объявление', style: TextStyle(fontSize: 13, color: Color(0xFF00C853), fontWeight: FontWeight.w600)),
+                      Text('p2p_offer', style: TextStyle(fontSize: 13, color: Color(0xFF00C853), fontWeight: FontWeight.w600)),
                     ]),
                   ),
                 ),
@@ -434,7 +438,7 @@ class _P2PScreenState extends State<P2PScreen> {
                 const Icon(Icons.tune, color: Color(0xFF42A5F5), size: 16),
                 const SizedBox(width: 6),
                 Text(
-                  '${_flag(_currency)} $_currency · ${_filterMode == 'main' ? 'Основные' : _filterMode == 'fav' ? 'Избранные' : 'Все'}',
+                  '${_flag(_currency)} $_currency · ${_filterMode == 'main' ? t('p2p_main') : _filterMode == 'fav' ? t('p2p_fav') : t('p2p_all')}',
                   style: const TextStyle(fontSize: 13, color: Color(0xFF42A5F5), fontWeight: FontWeight.w600),
                 ),
               ]),
@@ -462,19 +466,19 @@ class _P2PScreenState extends State<P2PScreen> {
             children: [
               Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)))),
               const SizedBox(height: 20),
-              const Text('Фильтр', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+              Text(t('p2p_filter'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
               const SizedBox(height: 16),
-              const Text('Категория', style: TextStyle(fontSize: 13, color: Colors.white54)),
+              Text(t('p2p_cat'), style: const TextStyle(fontSize: 13, color: Colors.white54)),
               const SizedBox(height: 8),
               Row(children: [
-                _filterBtn('Основные', 'main', setS),
+                _filterBtn(t('p2p_main'), 'main', setS),
                 const SizedBox(width: 8),
-                _filterBtn('Избранные', 'fav', setS),
+                _filterBtn(t('p2p_fav'), 'fav', setS),
                 const SizedBox(width: 8),
-                _filterBtn('Все', 'all', setS),
+                _filterBtn(t('p2p_all'), 'all', setS),
               ]),
               const SizedBox(height: 16),
-              const Text('Валюта', style: TextStyle(fontSize: 13, color: Colors.white54)),
+              Text(t('p2p_curr'), style: const TextStyle(fontSize: 13, color: Colors.white54)),
               const SizedBox(height: 8),
               SizedBox(
                 height: 36,
@@ -517,7 +521,7 @@ class _P2PScreenState extends State<P2PScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: const Text('Применить', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                  child: Text(t('p2p_apply'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
               ),
             ],
@@ -546,7 +550,7 @@ class _P2PScreenState extends State<P2PScreen> {
 
   Widget _buildCard(Map<String, dynamic> offer) {
     final actionColor = _isBuy ? const Color(0xFF00C853) : const Color(0xFFFF1744);
-    final actionLabel = _isBuy ? 'Купить' : 'Продать';
+    final actionLabel = _isBuy ? t('p2p_buy') : t('p2p_sell');
     final methods = (offer['pay_methods'] as List?)?.cast<String>() ?? [];
     final isOwn = offer['user_id'] == _uid;
 
@@ -568,7 +572,7 @@ class _P2PScreenState extends State<P2PScreen> {
                 child: Row(children: [
                   const Icon(Icons.person, size: 13, color: Color(0xFF42A5F5)),
                   const SizedBox(width: 4),
-                  const Expanded(child: Text('Моё объявление', style: TextStyle(fontSize: 11, color: Color(0xFF42A5F5), fontWeight: FontWeight.w600))),
+                  Expanded(child: Text(t('p2p_my'), style: const TextStyle(fontSize: 11, color: Color(0xFF42A5F5), fontWeight: FontWeight.w600))),
                   GestureDetector(
                     onTap: () => _showCreateOffer(existing: offer),
                     child: const Icon(Icons.edit_outlined, size: 16, color: Colors.white38),
@@ -602,7 +606,7 @@ class _P2PScreenState extends State<P2PScreen> {
                 const SizedBox(width: 10),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(offer['username'] ?? 'user', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
-                  const Text('Активен', style: TextStyle(fontSize: 11, color: Colors.white38)),
+                  Text(t('p2p_active'), style: const TextStyle(fontSize: 11, color: Colors.white38)),
                 ])),
                 Column(crossAxisAlignment: CrossAxisAlignment.end, children: methods.map((m) => Padding(
                   padding: const EdgeInsets.only(bottom: 3),
@@ -626,9 +630,9 @@ class _P2PScreenState extends State<P2PScreen> {
             const SizedBox(height: 6),
             Row(children: [
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Лимит  ${offer['limit_min']} – ${offer['limit_max']} ₸', style: const TextStyle(fontSize: 12, color: Colors.white54)),
+                Text('${t('p2p_limit')}  ${offer['limit_min']} – ${offer['limit_max']} ₸', style: const TextStyle(fontSize: 12, color: Colors.white54)),
                 const SizedBox(height: 2),
-                Text('Доступно  ${offer['available']} ${offer['currency']}', style: const TextStyle(fontSize: 12, color: Colors.white54)),
+                Text('${t('p2p_avail')}  ${offer['available']} ${offer['currency']}', style: const TextStyle(fontSize: 12, color: Colors.white54)),
               ])),
               if (!isOwn)
                 GestureDetector(
@@ -651,11 +655,11 @@ class _P2PScreenState extends State<P2PScreen> {
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         Icon(Icons.swap_horiz, size: 80, color: Colors.white.withOpacity(0.1)),
         const SizedBox(height: 16),
-        const Text('Объявлений пока нет', style: TextStyle(fontSize: 18, color: Colors.white54)),
+        Text(t('p2p_empty'), style: const TextStyle(fontSize: 18, color: Colors.white54)),
         const SizedBox(height: 8),
         GestureDetector(
           onTap: _showCreateOffer,
-          child: const Text('Создать первое объявление', style: TextStyle(fontSize: 14, color: Color(0xFF00C853))),
+          child: Text(t('p2p_create_first'), style: const TextStyle(fontSize: 14, color: Color(0xFF00C853))),
         ),
       ]),
     );

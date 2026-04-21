@@ -15,14 +15,13 @@ import 'forecast_screen.dart';
 import 'wallet_screen.dart';
 import 'p2p_deals_screen.dart';
 import 'app_background.dart';
+import 'l10n_service.dart';
 
 class OtherScreen extends StatelessWidget {
   final String selectedCountry;
-  final String selectedLanguage;
   final bool isLoggedIn;
   final bool isLegalEntity;
   final Function(String) onCountryChanged;
-  final Function(String) onLanguageChanged;
   final Function(bool) onLogin;
   final VoidCallback onLogout;
   final VoidCallback onNavigateToChart;
@@ -37,11 +36,9 @@ class OtherScreen extends StatelessWidget {
   const OtherScreen({
     super.key,
     required this.selectedCountry,
-    required this.selectedLanguage,
     required this.isLoggedIn,
     required this.isLegalEntity,
     required this.onCountryChanged,
-    required this.onLanguageChanged,
     required this.onLogin,
     required this.onLogout,
     required this.onNavigateToChart,
@@ -62,17 +59,17 @@ class OtherScreen extends StatelessWidget {
         body: ListView(
           padding: const EdgeInsets.all(16),
         children: [
-          Text(tr('other', selectedLanguage), style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white)),
+          Text(tr('other', L10n.locale.languageCode), style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white)),
           const SizedBox(height: 24),
-          _buildMenuItem(Icons.attach_money, tr('allRates', selectedLanguage), () {
+          _buildMenuItem(Icons.attach_money, tr('allRates', L10n.locale.languageCode), () {
             onNavigateToHome();
           }),
           if (!isLegalEntity)
-            _buildMenuItem(Icons.account_balance_wallet, tr('wallet', selectedLanguage), () {
+            _buildMenuItem(Icons.account_balance_wallet, tr('wallet', L10n.locale.languageCode), () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const WalletScreen()));
             }),
           if (!isLegalEntity)
-            _buildMenuItem(Icons.handshake_outlined, tr('myP2PDeals', selectedLanguage), () {
+            _buildMenuItem(Icons.handshake_outlined, tr('myP2PDeals', L10n.locale.languageCode), () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const P2PDealsScreen()));
             }),
           if (!isLegalEntity)
@@ -108,9 +105,7 @@ class OtherScreen extends StatelessWidget {
               MaterialPageRoute(
                 builder: (context) => SettingsScreen(
                   selectedCountry: selectedCountry,
-                  selectedLanguage: selectedLanguage,
                   onCountryChanged: onCountryChanged,
-                  onLanguageChanged: onLanguageChanged,
                 ),
               ),
             );
