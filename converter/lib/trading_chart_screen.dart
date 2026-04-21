@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 
 class TradingChartScreen extends StatefulWidget {
-  final String selectedLanguage;
   final List<Map<String, String>> aiuBankRates;
   final List<Map<String, dynamic>> rateHistory;
 
   const TradingChartScreen({
     super.key,
-    required this.selectedLanguage,
     required this.aiuBankRates,
     required this.rateHistory,
   });

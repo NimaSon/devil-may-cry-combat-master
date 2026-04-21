@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'app_background.dart';
+import 'l10n_service.dart';
 
 final _supabase = Supabase.instance.client;
 
@@ -93,41 +94,46 @@ class _P2PDealsScreenState extends State<P2PDealsScreen> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
-    return AppBackground(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: const Text('Мои сделки'),
-          bottom: TabBar(
-            controller: _tabController,
-            indicatorColor: const Color(0xFF00C853),
-            labelColor: const Color(0xFF00C853),
-            unselectedLabelColor: Colors.white54,
-            tabs: [
-              Tab(text: 'Входящие${_incoming.isNotEmpty ? ' (${_incoming.length})' : ''}'),
-              const Tab(text: 'Все сделки'),
-            ],
+    return ValueListenableBuilder(
+      valueListenable: L10n.localeNotifier,
+      builder: (context, locale, _) => AppBackground(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            title: Text(t('deals_title')),
+            bottom: TabBar(
+              controller: _tabController,
+              indicatorColor: const Color(0xFF00C853),
+              labelColor: const Color(0xFF00C853),
+              unselectedLabelColor: Colors.white54,
+              tabs: [
+                Tab(text: '${t('deals_inc')}${_incoming.isNotEmpty ? ' (${_incoming.length})' : ''}'),
+                Tab(text: t('deals_all')),
+              ],
+            ),
           ),
+          body: _loading
+              ? const Center(child: CircularProgressIndicator(color: Color(0xFF00C853)))
+              : _uid.isEmpty
+                  ? _buildNotAuth()
+                  : TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildIncoming(),
+                        _buildAll(),
+                      ],
+                    ),
         ),
-        body: _loading
-            ? const Center(child: CircularProgressIndicator(color: Color(0xFF00C853)))
-            : _uid.isEmpty
-                ? _buildNotAuth()
-                : TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildIncoming(),
-                      _buildAll(),
-                    ],
-                  ),
       ),
     );
   }
 
   Widget _buildNotAuth() {
-    return const Center(
-      child: Text('Войдите в аккаунт чтобы видеть сделки',
-          style: TextStyle(color: Colors.white54, fontSize: 16)),
+    return Center(
+      child: Text(
+        t('deals_not_auth'),
+        style: const TextStyle(color: Colors.white54, fontSize: 16),
+      ),
     );
   }
 
@@ -137,7 +143,7 @@ class _P2PDealsScreenState extends State<P2PDealsScreen> with SingleTickerProvid
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           Icon(Icons.inbox, size: 80, color: Colors.white.withOpacity(0.1)),
           const SizedBox(height: 16),
-          const Text('Входящих заявок нет', style: TextStyle(fontSize: 18, color: Colors.white54)),
+          Text(t('deals_empty_inc'), style: const TextStyle(fontSize: 18, color: Colors.white54)),
         ]),
       );
     }
@@ -157,7 +163,7 @@ class _P2PDealsScreenState extends State<P2PDealsScreen> with SingleTickerProvid
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           Icon(Icons.swap_horiz, size: 80, color: Colors.white.withOpacity(0.1)),
           const SizedBox(height: 16),
-          const Text('Сделок пока нет', style: TextStyle(fontSize: 18, color: Colors.white54)),
+          Text(t('deals_empty_all'), style: const TextStyle(fontSize: 18, color: Colors.white54)),
         ]),
       );
     }
@@ -180,10 +186,10 @@ class _P2PDealsScreenState extends State<P2PDealsScreen> with SingleTickerProvid
             ? const Color(0xFFFF1744)
             : const Color(0xFFFFD600);
     final statusText = status == 'completed'
-        ? 'Завершена'
+        ? t('deals_status_ok')
         : status == 'cancelled'
-            ? 'Отменена'
-            : 'Ожидание';
+            ? t('deals_status_cancel')
+            : t('deals_status_wait');
     final date = DateTime.tryParse(deal['created_at'] ?? '');
     final dateStr = date != null ? DateFormat('dd.MM HH:mm').format(date) : '';
     final counterpart = isBuyer ? deal['seller_username'] : deal['buyer_username'];
@@ -215,7 +221,7 @@ class _P2PDealsScreenState extends State<P2PDealsScreen> with SingleTickerProvid
                   const SizedBox(width: 10),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(counterpart ?? 'user', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
-                    Text(isBuyer ? 'Вы покупаете' : 'Вы продаёте', style: const TextStyle(fontSize: 11, color: Colors.white38)),
+                    Text(isBuyer ? t('deals_i_buy') : t('deals_i_sell'), style: const TextStyle(fontSize: 11, color: Colors.white38)),
                   ])),
                   Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                     Container(
@@ -239,15 +245,15 @@ class _P2PDealsScreenState extends State<P2PDealsScreen> with SingleTickerProvid
                   ),
                   child: Row(children: [
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      const Text('Сумма', style: TextStyle(fontSize: 11, color: Colors.white38)),
+                      Text(t('deals_sum'), style: const TextStyle(fontSize: 11, color: Colors.white38)),
                       Text('${deal['amount']} ₸', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                     ])),
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
-                      const Text('Курс', style: TextStyle(fontSize: 11, color: Colors.white38)),
+                      Text(t('deals_rate'), style: const TextStyle(fontSize: 11, color: Colors.white38)),
                       Text('${deal['price']} ₸', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                     ])),
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                      const Text('Валюта', style: TextStyle(fontSize: 11, color: Colors.white38)),
+                      Text(t('p2p_curr'), style: const TextStyle(fontSize: 11, color: Colors.white38)),
                       Text(deal['currency'] ?? '', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                     ])),
                   ]),
@@ -266,7 +272,7 @@ class _P2PDealsScreenState extends State<P2PDealsScreen> with SingleTickerProvid
                     builder: (_) => P2PChatScreen(deal: deal),
                   )),
                   icon: const Icon(Icons.chat_bubble_outline, size: 16),
-                  label: const Text('Чат'),
+                  label: Text(t('deals_chat')),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFF42A5F5),
                     side: const BorderSide(color: Color(0xFF42A5F5)),
@@ -283,7 +289,7 @@ class _P2PDealsScreenState extends State<P2PDealsScreen> with SingleTickerProvid
                       backgroundColor: const Color(0xFF00C853),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: const Text('Принять', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: Text(t('deals_accept'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -294,7 +300,7 @@ class _P2PDealsScreenState extends State<P2PDealsScreen> with SingleTickerProvid
                       backgroundColor: const Color(0xFFFF1744),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: const Text('Отклонить', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: Text(t('deals_reject'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -307,7 +313,7 @@ class _P2PDealsScreenState extends State<P2PDealsScreen> with SingleTickerProvid
                       backgroundColor: const Color(0xFFFF1744),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: const Text('Отменить', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: Text(t('deals_cancel_btn'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -443,52 +449,60 @@ class _P2PChatScreenState extends State<P2PChatScreen> {
         : status == 'cancelled'
             ? const Color(0xFFFF1744)
             : const Color(0xFFFFD600);
+    final statusText = status == 'completed'
+        ? t('deals_status_ok')
+        : status == 'cancelled'
+            ? t('deals_status_cancel')
+            : t('deals_status_wait');
 
-    return AppBackground(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: Row(children: [
-            Container(
-              width: 32, height: 32,
-              decoration: BoxDecoration(
-                color: const Color(0xFF00C853).withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
+    return ValueListenableBuilder(
+      valueListenable: L10n.localeNotifier,
+      builder: (context, locale, _) => AppBackground(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            title: Row(children: [
+              Container(
+                width: 32, height: 32,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00C853).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(child: Text((counterpart ?? 'U')[0].toUpperCase(),
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF00C853)))),
               ),
-              child: Center(child: Text((counterpart ?? 'U')[0].toUpperCase(),
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF00C853)))),
-            ),
-            const SizedBox(width: 10),
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(counterpart ?? 'user', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              Text('${widget.deal['amount']} ₸ · ${widget.deal['currency']}',
-                  style: const TextStyle(fontSize: 11, color: Colors.white54)),
+              const SizedBox(width: 10),
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(counterpart ?? 'user', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text('${widget.deal['amount']} ₸ · ${widget.deal['currency']}',
+                    style: const TextStyle(fontSize: 11, color: Colors.white54)),
+              ]),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  statusText,
+                  style: TextStyle(fontSize: 11, color: statusColor, fontWeight: FontWeight.w600),
+                ),
+              ),
             ]),
-            const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                status == 'completed' ? 'Завершена' : status == 'cancelled' ? 'Отменена' : 'Ожидание',
-                style: TextStyle(fontSize: 11, color: statusColor, fontWeight: FontWeight.w600),
+          ),
+          body: Column(children: [
+            Expanded(
+              child: ListView.builder(
+                controller: _scrollCtrl,
+                padding: const EdgeInsets.all(16),
+                itemCount: _messages.length,
+                itemBuilder: (ctx, i) => _buildMessage(_messages[i]),
               ),
             ),
+            _buildInput(),
           ]),
         ),
-        body: Column(children: [
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollCtrl,
-              padding: const EdgeInsets.all(16),
-              itemCount: _messages.length,
-              itemBuilder: (ctx, i) => _buildMessage(_messages[i]),
-            ),
-          ),
-          _buildInput(),
-        ]),
       ),
     );
   }
@@ -557,7 +571,7 @@ class _P2PChatScreenState extends State<P2PChatScreen> {
             controller: _msgCtrl,
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
-              hintText: 'Сообщение...',
+              hintText: t('deals_msg_hint'),
               hintStyle: const TextStyle(color: Colors.white24),
               filled: true,
               fillColor: Colors.white.withOpacity(0.07),

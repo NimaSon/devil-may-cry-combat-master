@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'currency_data.dart';
 import 'converter_screen.dart';
 import 'crypto_screen.dart';
@@ -12,7 +11,8 @@ import 'exchangers_screen.dart';
 import 'trading_chart_screen.dart';
 import 'risk_service.dart';
 import 'forecast_screen.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'l10n_service.dart';
+import 'user_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,9 +20,8 @@ void main() async {
     url: 'https://tfaghwznyvveoxpqbruo.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmYWdod3pueXZ2ZW94cHFicnVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NDQxNTgsImV4cCI6MjA5MDUyMDE1OH0.M3uk1bTg1WUox2_9ZvS8SEPu6L1KD5_R16HgIoAx4b4',
   );
-  final prefs = await SharedPreferences.getInstance();
-  final savedLanguage = prefs.getString('selectedLanguage') ?? 'ru';
-  runApp(MyApp(savedLanguage: savedLanguage));
+  await L10n.initLocale();
+  runApp(const MyApp());
 }
 
 class _FadeScalePageTransition extends PageTransitionsBuilder {
@@ -48,40 +47,47 @@ class _FadeScalePageTransition extends PageTransitionsBuilder {
   }
 }
 
-class MyApp extends StatelessWidget {
-  final String savedLanguage;
-
-  const MyApp({super.key, required this.savedLanguage});
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Конвертер Валют',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0D1B2A),
-        cardColor: Colors.white.withValues(alpha: 0.08),
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.dark),
-        pageTransitionsTheme: const PageTransitionsTheme(
-          builders: {
-            TargetPlatform.android: _FadeScalePageTransition(),
-            TargetPlatform.iOS: _FadeScalePageTransition(),
-            TargetPlatform.windows: _FadeScalePageTransition(),
-            TargetPlatform.linux: _FadeScalePageTransition(),
-            TargetPlatform.macOS: _FadeScalePageTransition(),
-          },
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.transparent,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-          iconTheme: IconThemeData(color: Colors.white),
-        ),
-        bottomNavigationBarTheme: BottomNavigationBarThemeData(
-          backgroundColor: Colors.black.withValues(alpha: 0.7),
+    return ValueListenableBuilder<Locale>(
+      valueListenable: L10n.localeNotifier,
+      builder: (context, locale, child) {
+        return MaterialApp(
+          title: 'Конвертер Валют',
+          debugShowCheckedModeBanner: false,
+          locale: locale,
+          theme: ThemeData(
+            brightness: Brightness.dark,
+            scaffoldBackgroundColor: const Color(0xFF0D1B2A),
+            cardColor: Colors.white.withValues(alpha: 0.08),
+            useMaterial3: true,
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.dark),
+            pageTransitionsTheme: const PageTransitionsTheme(
+              builders: {
+                TargetPlatform.android: _FadeScalePageTransition(),
+                TargetPlatform.iOS: _FadeScalePageTransition(),
+                TargetPlatform.windows: _FadeScalePageTransition(),
+                TargetPlatform.linux: _FadeScalePageTransition(),
+                TargetPlatform.macOS: _FadeScalePageTransition(),
+              },
+            ),
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Colors.transparent,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              titleTextStyle: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+              iconTheme: IconThemeData(color: Colors.white),
+            ),
+            bottomNavigationBarTheme: BottomNavigationBarThemeData(
+              backgroundColor: Colors.black.withValues(alpha: 0.7),
           selectedItemColor: const Color(0xFF42A5F5),
           unselectedItemColor: Colors.white54,
           type: BottomNavigationBarType.fixed,
@@ -94,15 +100,15 @@ class MyApp extends StatelessWidget {
         ),
         iconTheme: const IconThemeData(color: Colors.white70),
       ),
-      home: MainScreen(initialLanguage: savedLanguage),
+      home: const MainScreen(),
+        );
+      },
     );
   }
 }
 
 class MainScreen extends StatefulWidget {
-  final String initialLanguage;
-
-  const MainScreen({super.key, required this.initialLanguage});
+  const MainScreen({super.key});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -111,7 +117,6 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
   String selectedCountry = 'KZT';
-  late String selectedLanguage;
   bool isLoggedIn = false;
   bool isLegalEntity = false;
   Map<String, double> exchangeRates = {};
@@ -134,10 +139,18 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
-    selectedLanguage = widget.initialLanguage;
     _loadRates();
-
+    _loadFavorites();
     _testSupabaseConnection();
+  }
+
+  Future<void> _loadFavorites() async {
+    final favCurr = await UserService.getFavoriteCurrencies();
+    final favCrypto = await UserService.getFavoriteCrypto();
+    setState(() {
+      favoriteCurrencies = favCurr;
+      favoriteCrypto = favCrypto;
+    });
   }
 
   Future<void> _loadRates() async {
@@ -232,7 +245,6 @@ class _MainScreenState extends State<MainScreen> {
           favoriteCrypto: favoriteCrypto,
           allCurrencies: allCurrencies,
           allCrypto: allCrypto,
-          selectedLanguage: selectedLanguage,
         ),
       ),
     );
@@ -241,6 +253,8 @@ class _MainScreenState extends State<MainScreen> {
         favoriteCurrencies = result['currencies'];
         favoriteCrypto = result['crypto'];
       });
+      await UserService.setFavoriteCurrencies(favoriteCurrencies);
+      await UserService.setFavoriteCrypto(favoriteCrypto);
     }
   }
 
@@ -250,7 +264,6 @@ class _MainScreenState extends State<MainScreen> {
         return _buildHomeScreen();
       case 1:
         return ExchangersScreen(
-          selectedLanguage: selectedLanguage,
           isLoggedIn: isLoggedIn,
           isLegalEntity: isLegalEntity,
           aiuBankRates: aiuBankRates,
@@ -259,17 +272,15 @@ class _MainScreenState extends State<MainScreen> {
       case 2:
         return isLoggedIn && isLegalEntity
             ? TradingChartScreen(
-                selectedLanguage: selectedLanguage,
                 aiuBankRates: aiuBankRates,
                 rateHistory: rateHistory,
               )
-            : CryptoScreen(selectedLanguage: selectedLanguage);
+            : const CryptoScreen();
       case 3:
-        return ConverterScreen(selectedLanguage: selectedLanguage);
+        return const ConverterScreen();
       case 4:
         return OtherScreen(
           selectedCountry: selectedCountry,
-          selectedLanguage: selectedLanguage,
           isLoggedIn: isLoggedIn,
           isLegalEntity: isLegalEntity,
           aiuBankRates: aiuBankRates,
@@ -284,13 +295,6 @@ class _MainScreenState extends State<MainScreen> {
               selectedCountry = country;
             });
             _loadRates();
-          },
-          onLanguageChanged: (language) async {
-            setState(() {
-              selectedLanguage = language;
-            });
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.setString('selectedLanguage', language);
           },
           onLogin: (bool isLegal) {
             setState(() {
@@ -317,7 +321,7 @@ class _MainScreenState extends State<MainScreen> {
           onRatesUpdate: _onRatesUpdate,
         );
       default:
-        return Center(child: Text('${tr('page', selectedLanguage)} ${_selectedIndex + 1}'));
+        return Center(child: Text('Страница ${_selectedIndex + 1}'));
     }
   }
 
@@ -346,14 +350,14 @@ class _MainScreenState extends State<MainScreen> {
         onTap: (index) => setState(() => _selectedIndex = index),
         type: BottomNavigationBarType.fixed,
         items: [
-          BottomNavigationBarItem(icon: const Icon(Icons.home), label: tr('home', selectedLanguage)),
-          BottomNavigationBarItem(icon: const Icon(Icons.swap_horiz), label: tr('exchangers', selectedLanguage)),
+          BottomNavigationBarItem(icon: const Icon(Icons.home), label: tr('home', L10n.locale.languageCode)),
+          BottomNavigationBarItem(icon: const Icon(Icons.swap_horiz), label: tr('exchangers', L10n.locale.languageCode)),
           BottomNavigationBarItem(
             icon: const Icon(Icons.currency_bitcoin),
-            label: isLoggedIn && isLegalEntity ? tr('tradingChart', selectedLanguage) : tr('crypto', selectedLanguage),
+            label: isLoggedIn && isLegalEntity ? 'График торгов' : tr('crypto', L10n.locale.languageCode),
           ),
-          BottomNavigationBarItem(icon: const Icon(Icons.calculate), label: tr('converter', selectedLanguage)),
-          BottomNavigationBarItem(icon: const Icon(Icons.more_horiz), label: tr('other', selectedLanguage)),
+          BottomNavigationBarItem(icon: const Icon(Icons.calculate), label: tr('converter', L10n.locale.languageCode)),
+          BottomNavigationBarItem(icon: const Icon(Icons.more_horiz), label: tr('other', L10n.locale.languageCode)),
         ],
       ),
     );
@@ -382,12 +386,12 @@ class _MainScreenState extends State<MainScreen> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Center(
+                  child: const Center(
                     child: Text('🏛️', style: TextStyle(fontSize: 32)),
                   ),
                 ),
                 const SizedBox(width: 16),
-                Expanded(
+                const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -396,7 +400,7 @@ class _MainScreenState extends State<MainScreen> {
                         style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                       Text(
-                        tr('legalEntity', selectedLanguage),
+                        'Юридическое лицо',
                         style: TextStyle(fontSize: 14, color: Colors.white70),
                       ),
                     ],
@@ -434,14 +438,14 @@ class _MainScreenState extends State<MainScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            Text(tr('home', selectedLanguage), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+            Text(tr('home', L10n.locale.languageCode), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
             const Spacer(),
 
-            TextButton(onPressed: _openEditScreen, child: Text(tr('edit', selectedLanguage))),
+            TextButton(onPressed: _openEditScreen, child: Text(tr('edit', L10n.locale.languageCode))),
           ],
         ),
         const SizedBox(height: 24),
-        Text(tr('currencyRates', selectedLanguage), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+        Text(tr('currencyRates', L10n.locale.languageCode), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
         const SizedBox(height: 12),
         ...favoriteCurrencies.map((code) {
           final currency = allCurrencies[code]!;
@@ -450,7 +454,7 @@ class _MainScreenState extends State<MainScreen> {
           return _buildCurrencyCard(currency['flag'], code, price, currency['change'], currency['isUp']);
         }),
         const SizedBox(height: 24),
-        Text(tr('crypto', selectedLanguage), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+        Text(tr('crypto', L10n.locale.languageCode), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
         const SizedBox(height: 12),
         ...favoriteCrypto.map((code) {
           final crypto = allCrypto[code]!;
@@ -528,7 +532,6 @@ class EditCurrenciesScreen extends StatefulWidget {
   final List<String> favoriteCrypto;
   final Map<String, Map<String, dynamic>> allCurrencies;
   final Map<String, Map<String, dynamic>> allCrypto;
-  final String selectedLanguage;
 
   const EditCurrenciesScreen({
     super.key,
@@ -536,7 +539,6 @@ class EditCurrenciesScreen extends StatefulWidget {
     required this.favoriteCrypto,
     required this.allCurrencies,
     required this.allCrypto,
-    required this.selectedLanguage,
   });
 
   @override
@@ -593,7 +595,7 @@ class _EditCurrenciesScreenState extends State<EditCurrenciesScreen> with Single
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(tr('changeFavorites', widget.selectedLanguage)),
+        title: Text(tr('changeFavorites', 'ru')),
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.pop(context),
@@ -606,7 +608,7 @@ class _EditCurrenciesScreenState extends State<EditCurrenciesScreen> with Single
                 'crypto': _favoriteCrypto,
               });
             },
-            child: Text(tr('done', widget.selectedLanguage), style: const TextStyle(fontSize: 16)),
+            child: Text(tr('done', 'ru'), style: const TextStyle(fontSize: 16)),
           ),
         ],
         bottom: PreferredSize(
@@ -616,8 +618,8 @@ class _EditCurrenciesScreenState extends State<EditCurrenciesScreen> with Single
               TabBar(
                 controller: _tabController,
                 tabs: [
-                  Tab(text: tr('favorites', widget.selectedLanguage)),
-                  Tab(text: tr('all', widget.selectedLanguage)),
+                  Tab(text: tr('favorites', 'ru')),
+                  Tab(text: tr('all', 'ru')),
                 ],
               ),
               Container(
@@ -625,7 +627,7 @@ class _EditCurrenciesScreenState extends State<EditCurrenciesScreen> with Single
                 child: TextField(
                   onChanged: (value) => setState(() => _searchQuery = value),
                   decoration: InputDecoration(
-                    hintText: tr('search', widget.selectedLanguage),
+                    hintText: tr('search', 'ru'),
                     prefixIcon: const Icon(Icons.search),
                     filled: true,
                     border: OutlineInputBorder(
@@ -655,7 +657,7 @@ class _EditCurrenciesScreenState extends State<EditCurrenciesScreen> with Single
         if (_favoriteCurrencies.isNotEmpty) ...[
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Text(tr('currencyRates', widget.selectedLanguage), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            child: Text(tr('currencyRates', 'ru'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           ),
           ..._favoriteCurrencies.map((code) {
             final currency = widget.allCurrencies[code]!;
@@ -665,7 +667,7 @@ class _EditCurrenciesScreenState extends State<EditCurrenciesScreen> with Single
         if (_favoriteCrypto.isNotEmpty) ...[
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Text(tr('crypto', widget.selectedLanguage), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            child: Text(tr('crypto', 'ru'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           ),
           ..._favoriteCrypto.map((code) {
             final crypto = widget.allCrypto[code]!;
@@ -682,9 +684,9 @@ class _EditCurrenciesScreenState extends State<EditCurrenciesScreen> with Single
 
     return ListView(
       children: [
-        Padding(
+        const Padding(
           padding: EdgeInsets.all(16),
-          child: Text(tr('currencyRates', widget.selectedLanguage), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          child: Text('Курсы валют', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         ),
         ...filteredCurrencies.map((entry) {
           final code = entry.key;
@@ -692,9 +694,9 @@ class _EditCurrenciesScreenState extends State<EditCurrenciesScreen> with Single
           final isFavorite = _favoriteCurrencies.contains(code);
           return _buildCurrencyItem(currency['flag'], code, currency['name'], isFavorite, false);
         }),
-        Padding(
+        const Padding(
           padding: EdgeInsets.all(16),
-          child: Text(tr('crypto', widget.selectedLanguage), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          child: Text('Криптовалюта', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         ),
         ...filteredCrypto.map((entry) {
           final code = entry.key;

@@ -3,13 +3,12 @@ import 'package:flutter/foundation.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'currency_data.dart';
 import 'translations.dart';
-
 import 'app_background.dart';
+import 'user_service.dart';
+import 'l10n_service.dart';
 
 class ConverterScreen extends StatefulWidget {
-  final String selectedLanguage;
-
-  const ConverterScreen({super.key, required this.selectedLanguage});
+  const ConverterScreen({super.key});
 
   @override
   State<ConverterScreen> createState() => _ConverterScreenState();
@@ -29,10 +28,18 @@ class _ConverterScreenState extends State<ConverterScreen> {
   @override
   void initState() {
     super.initState();
-    for (var code in favoriteConverterCurrencies) {
-      controllers[code] = TextEditingController(text: '0');
-    }
+    _loadFavorites();
     _initSpeech();
+  }
+
+  Future<void> _loadFavorites() async {
+    final favorites = await UserService.getFavoriteCurrencies();
+    setState(() {
+      favoriteConverterCurrencies = favorites;
+      for (var code in favoriteConverterCurrencies) {
+        controllers[code] = TextEditingController(text: '0');
+      }
+    });
   }
 
   Future<void> _initSpeech() async {
@@ -79,7 +86,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
     });
   }
 
-  void _parseVoiceInput(String text) {
+  void _parseVoiceInput(String text) async {
     text = text.toLowerCase().trim();
 
     // Ищем число
@@ -117,6 +124,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
         favoriteConverterCurrencies.add(currency);
         controllers[currency] = TextEditingController(text: '0');
       });
+      await UserService.setFavoriteCurrencies(favoriteConverterCurrencies);
     }
     if (!controllers.containsKey(currency)) {
       controllers[currency] = TextEditingController(text: '0');
@@ -136,7 +144,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
       MaterialPageRoute(
         builder: (context) => ConverterEditScreen(
           favoriteCurrencies: favoriteConverterCurrencies,
-          selectedLanguage: widget.selectedLanguage,
+          selectedLanguage: L10n.locale.languageCode,
         ),
       ),
     );
@@ -149,6 +157,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
           }
         }
       });
+      await UserService.setFavoriteCurrencies(favoriteConverterCurrencies);
     }
   }
 
@@ -185,7 +194,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
-          title: Text(tr('converter', widget.selectedLanguage), style: const TextStyle(fontWeight: FontWeight.bold)),
+          title: Text(tr('converter', L10n.locale.languageCode), style: const TextStyle(fontWeight: FontWeight.bold)),
           actions: [
             IconButton(icon: const Icon(Icons.edit), onPressed: _openEditScreen),
             IconButton(icon: const Icon(Icons.share), onPressed: () {}),
@@ -403,7 +412,7 @@ class _ConverterEditScreenState extends State<ConverterEditScreen> with SingleTi
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(tr('changeFavorites', widget.selectedLanguage)),
+        title: Text(tr('changeFavorites', L10n.locale.languageCode)),
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.pop(context),
@@ -413,7 +422,7 @@ class _ConverterEditScreenState extends State<ConverterEditScreen> with SingleTi
             onPressed: () {
               Navigator.pop(context, _favoriteCurrencies);
             },
-            child: Text(tr('done', widget.selectedLanguage), style: const TextStyle(fontSize: 16)),
+            child: Text(tr('done', L10n.locale.languageCode), style: const TextStyle(fontSize: 16)),
           ),
         ],
         bottom: PreferredSize(
@@ -423,8 +432,8 @@ class _ConverterEditScreenState extends State<ConverterEditScreen> with SingleTi
               TabBar(
                 controller: _tabController,
                 tabs: [
-                  Tab(text: tr('favorites', widget.selectedLanguage)),
-                  Tab(text: tr('all', widget.selectedLanguage)),
+                  Tab(text: tr('favorites', L10n.locale.languageCode)),
+                  Tab(text: tr('all', L10n.locale.languageCode)),
                 ],
               ),
               Container(
@@ -432,7 +441,7 @@ class _ConverterEditScreenState extends State<ConverterEditScreen> with SingleTi
                 child: TextField(
                   onChanged: (value) => setState(() => _searchQuery = value),
                   decoration: InputDecoration(
-                    hintText: tr('search', widget.selectedLanguage),
+                    hintText: tr('search', L10n.locale.languageCode),
                     prefixIcon: const Icon(Icons.search),
                     filled: true,
                     border: OutlineInputBorder(
