@@ -12,6 +12,8 @@ class UserService {
         .from('user_profiles')
         .select()
         .eq('user_id', user.id)
+        .order('updated_at', ascending: false)
+        .limit(1)
         .maybeSingle();
 
     return response;
