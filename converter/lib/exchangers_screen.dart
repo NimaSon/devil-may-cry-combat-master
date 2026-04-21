@@ -3,9 +3,9 @@ import 'translations.dart';
 import 'rate_management_screen.dart';
 import 'p2p_screen.dart';
 import 'app_background.dart';
+import 'l10n_service.dart';
 
 class ExchangersScreen extends StatefulWidget {
-  final String selectedLanguage;
   final bool isLoggedIn;
   final bool isLegalEntity;
   final List<Map<String, String>> aiuBankRates;
@@ -13,7 +13,6 @@ class ExchangersScreen extends StatefulWidget {
 
   const ExchangersScreen({
     super.key,
-    required this.selectedLanguage,
     required this.isLoggedIn,
     required this.isLegalEntity,
     required this.aiuBankRates,
@@ -166,7 +165,7 @@ class _ExchangersScreenState extends State<ExchangersScreen> with SingleTickerPr
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                 child: Text(
-                  tr('exchangers', widget.selectedLanguage),
+                  tr('exchangers', L10n.locale.languageCode),
                   style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
               ),
@@ -195,7 +194,7 @@ class _ExchangersScreenState extends State<ExchangersScreen> with SingleTickerPr
                                   onChanged: (value) => setState(() => _searchQuery = value),
                                   style: const TextStyle(color: Colors.white),
                                   decoration: InputDecoration(
-                                    hintText: tr('search', widget.selectedLanguage),
+                                    hintText: tr('search', L10n.locale.languageCode),
                                     hintStyle: const TextStyle(color: Colors.white54),
                                     prefixIcon: const Icon(Icons.search, color: Colors.white54),
                                     filled: true,

@@ -284,9 +284,6 @@ class _MainScreenState extends State<MainScreen> {
             });
             _loadRates();
           },
-          onLanguageChanged: (language) {
-            // Language is now handled globally
-          },
           onLogin: (bool isLegal) {
             setState(() {
               isLoggedIn = true;

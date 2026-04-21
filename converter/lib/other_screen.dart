@@ -73,25 +73,25 @@ class OtherScreen extends StatelessWidget {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const P2PDealsScreen()));
             }),
           if (!isLegalEntity)
-            _buildMenuItem(Icons.location_on, tr('nearbyExchangers', selectedLanguage), () {
+            _buildMenuItem(Icons.location_on, tr('nearbyExchangers', L10n.locale.languageCode), () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const NearbyExchangersScreen()));
             }),
           if (isLoggedIn && isLegalEntity)
-            _buildMenuItem(Icons.show_chart, tr('tradingChart', selectedLanguage), () {
+            _buildMenuItem(Icons.show_chart, tr('tradingChart', L10n.locale.languageCode), () {
               onNavigateToChart();
             }),
           if (!isLegalEntity)
-            _buildMenuItem(Icons.newspaper, tr('economicNews', selectedLanguage), () {
+            _buildMenuItem(Icons.newspaper, tr('economicNews', L10n.locale.languageCode), () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const NewsScreen()));
             }),
           if (!isLegalEntity)
-            _buildMenuItem(Icons.auto_graph, tr('forecastRate', selectedLanguage), () {
+            _buildMenuItem(Icons.auto_graph, tr('forecastRate', L10n.locale.languageCode), () {
               Navigator.push(context, MaterialPageRoute(
                 builder: (context) => ForecastViewScreen(forecasts: bankForecasts, aiuBankRates: aiuBankRates, rateHistory: rateHistory),
               ));
             }),
           if (isLoggedIn && isLegalEntity)
-            _buildMenuItem(Icons.auto_graph, tr('forecastManage', selectedLanguage), () {
+            _buildMenuItem(Icons.auto_graph, tr('forecastManage', L10n.locale.languageCode), () {
               Navigator.push(context, MaterialPageRoute(
                 builder: (context) => ForecastManageScreen(
                   forecasts: bankForecasts,
@@ -99,7 +99,7 @@ class OtherScreen extends StatelessWidget {
                 ),
               ));
             }),
-          _buildMenuItem(Icons.settings, tr('settings', selectedLanguage), () {
+          _buildMenuItem(Icons.settings, tr('settings', L10n.locale.languageCode), () {
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -111,7 +111,7 @@ class OtherScreen extends StatelessWidget {
             );
           }),
           if (isLoggedIn && isLegalEntity)
-            _buildMenuItem(Icons.leaderboard, tr('competitorRates', selectedLanguage), () {
+            _buildMenuItem(Icons.leaderboard, tr('competitorRates', L10n.locale.languageCode), () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -120,7 +120,7 @@ class OtherScreen extends StatelessWidget {
               );
             }),
           if (isLoggedIn && isLegalEntity)
-            _buildMenuItem(Icons.store, tr('myExchanger', selectedLanguage), () {
+            _buildMenuItem(Icons.store, tr('myExchanger', L10n.locale.languageCode), () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -132,7 +132,7 @@ class OtherScreen extends StatelessWidget {
               );
             }),
           if (isLoggedIn && isLegalEntity)
-            _buildMenuItem(Icons.history, tr('rateHistory', selectedLanguage), () {
+            _buildMenuItem(Icons.history, tr('rateHistory', L10n.locale.languageCode), () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -141,9 +141,9 @@ class OtherScreen extends StatelessWidget {
               );
             }),
           if (isLoggedIn && isLegalEntity)
-            _buildMenuItem(Icons.sell, tr('mySales', selectedLanguage), () {}),
+            _buildMenuItem(Icons.sell, tr('mySales', L10n.locale.languageCode), () {}),
           if (isLoggedIn && isLegalEntity)
-            _buildMenuItem(Icons.warning_amber_rounded, tr('riskNotifications', selectedLanguage), () {
+            _buildMenuItem(Icons.warning_amber_rounded, tr('riskNotifications', L10n.locale.languageCode), () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -179,7 +179,7 @@ class OtherScreen extends StatelessWidget {
                 ),
               ),
               child: Text(
-                isLoggedIn ? tr('logout', selectedLanguage) : tr('login', selectedLanguage),
+                isLoggedIn ? tr('logout', L10n.locale.languageCode) : tr('login', L10n.locale.languageCode),
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
