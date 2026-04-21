@@ -53,11 +53,9 @@ class UserService {
       final serverFavorites = profile?['favorite_currencies'];
       if (serverFavorites is List && serverFavorites.isNotEmpty) {
         final serverList = List<String>.from(serverFavorites);
-        // Синхронизировать локально
         await prefs.setStringList('favorite_currencies', serverList);
         return serverList;
       } else {
-        // Если на сервере пусто, загрузить локальные на сервер
         await setFavoriteCurrencies(localFavorites);
         return localFavorites;
       }
@@ -75,6 +73,9 @@ class UserService {
       await updateUserProfile({'favorite_currencies': currencies});
     }
   }
+
+  // Получить избранные криптовалюты
+  static Future<List<String>> getFavoriteCrypto() async {
     final prefs = await SharedPreferences.getInstance();
     final localFavorites = prefs.getStringList('favorite_crypto') ?? ['BTC'];
 
