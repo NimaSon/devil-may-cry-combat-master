@@ -65,8 +65,16 @@ class UserService {
     return localFavorites;
   }
 
-  // Получить избранные криптовалюты
-  static Future<List<String>> getFavoriteCrypto() async {
+  // Установить избранные валюты
+  static Future<void> setFavoriteCurrencies(List<String> currencies) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('favorite_currencies', currencies);
+
+    final user = _supabase.auth.currentUser;
+    if (user != null) {
+      await updateUserProfile({'favorite_currencies': currencies});
+    }
+  }
     final prefs = await SharedPreferences.getInstance();
     final localFavorites = prefs.getStringList('favorite_crypto') ?? ['BTC'];
 
