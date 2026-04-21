@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'app_background.dart';
 import 'auth_screen.dart';
+import 'translations.dart';
 
 class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+  final String selectedLanguage;
+
+  const LoginScreen({super.key, required this.selectedLanguage});
 
   @override
   Widget build(BuildContext context) {
     return AppBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(backgroundColor: Colors.transparent, title: const Text('Вход'), centerTitle: true),
+        appBar: AppBar(backgroundColor: Colors.transparent, title: Text(tr('login', selectedLanguage)), centerTitle: true),
         body: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -42,8 +45,8 @@ class LoginScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 32),
-            const Text(
-              'Выберите тип аккаунта',
+            Text(
+              tr('selectAccountType', selectedLanguage),
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
               textAlign: TextAlign.center,
             ),
@@ -53,7 +56,7 @@ class LoginScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const AuthScreen(isLegalEntity: false),
+                    builder: (context) => AuthScreen(isLegalEntity: false, selectedLanguage: selectedLanguage),
                   ),
                 );
               },
@@ -66,8 +69,8 @@ class LoginScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
-              child: const Text(
-                'Физическое лицо',
+              child: Text(
+                tr('individual', selectedLanguage),
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
@@ -77,7 +80,7 @@ class LoginScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const AuthScreen(isLegalEntity: true),
+                    builder: (context) => AuthScreen(isLegalEntity: true, selectedLanguage: selectedLanguage),
                   ),
                 );
               },
@@ -90,8 +93,8 @@ class LoginScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
-              child: const Text(
-                'Юридическое лицо',
+              child: Text(
+                tr('legalEntity', selectedLanguage),
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
@@ -101,17 +104,17 @@ class LoginScreen extends StatelessWidget {
               children: [
                 TextButton(
                   onPressed: () {},
-                  child: const Text(
-                    'Забыли пароль?',
-                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                  child: Text(
+                    tr('forgotPassword', selectedLanguage),
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                 ),
                 const Text(' • ', style: TextStyle(color: Colors.grey)),
                 TextButton(
                   onPressed: () {},
-                  child: const Text(
-                    'Зарегистрироваться',
-                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                  child: Text(
+                    tr('register', selectedLanguage),
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                 ),
               ],

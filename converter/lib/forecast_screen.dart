@@ -26,12 +26,14 @@ class ForecastViewScreen extends StatelessWidget {
   final List<BankForecast> forecasts;
   final List<Map<String, String>> aiuBankRates;
   final List<Map<String, dynamic>> rateHistory;
+  final String selectedLanguage;
 
   const ForecastViewScreen({
     super.key,
     required this.forecasts,
     required this.aiuBankRates,
     required this.rateHistory,
+    required this.selectedLanguage,
   });
 
   @override
@@ -277,8 +279,9 @@ class ForecastViewScreen extends StatelessWidget {
 class ForecastManageScreen extends StatefulWidget {
   final List<BankForecast> forecasts;
   final Function(List<BankForecast>) onSave;
+  final String selectedLanguage;
 
-  const ForecastManageScreen({super.key, required this.forecasts, required this.onSave});
+  const ForecastManageScreen({super.key, required this.forecasts, required this.onSave, required this.selectedLanguage});
 
   @override
   State<ForecastManageScreen> createState() => _ForecastManageScreenState();

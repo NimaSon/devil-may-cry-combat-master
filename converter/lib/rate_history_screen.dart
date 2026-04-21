@@ -4,8 +4,9 @@ import 'app_background.dart';
 
 class RateHistoryScreen extends StatelessWidget {
   final List<Map<String, dynamic>> history;
+  final String selectedLanguage;
 
-  const RateHistoryScreen({super.key, required this.history});
+  const RateHistoryScreen({super.key, required this.history, required this.selectedLanguage});
 
   @override
   Widget build(BuildContext context) {

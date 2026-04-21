@@ -5,11 +5,13 @@ import 'app_background.dart';
 class MyExchangerScreen extends StatelessWidget {
   final List<Map<String, String>> aiuBankRates;
   final Function(List<Map<String, String>>) onRatesUpdate;
+  final String selectedLanguage;
 
   const MyExchangerScreen({
     super.key,
     required this.aiuBankRates,
     required this.onRatesUpdate,
+    required this.selectedLanguage,
   });
 
   @override

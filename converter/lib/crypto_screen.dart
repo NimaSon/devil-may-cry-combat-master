@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'currency_data.dart';
+import 'translations.dart';
 
 import 'app_background.dart';
 
 class CryptoScreen extends StatefulWidget {
-  const CryptoScreen({super.key});
+  final String selectedLanguage;
+
+  const CryptoScreen({super.key, required this.selectedLanguage});
 
   @override
   State<CryptoScreen> createState() => _CryptoScreenState();
@@ -34,7 +37,7 @@ class _CryptoScreenState extends State<CryptoScreen> {
             child: TextField(
               onChanged: (value) => setState(() => _searchQuery = value),
               decoration: InputDecoration(
-                hintText: 'Поиск',
+                hintText: tr('search', widget.selectedLanguage),
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
                 border: OutlineInputBorder(

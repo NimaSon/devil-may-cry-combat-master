@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'app_background.dart';
+import 'translations.dart';
 
 class LanguageSelectionScreen extends StatefulWidget {
   final String selectedLanguage;
@@ -45,11 +46,11 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           leading: IconButton(icon: const Icon(Icons.notifications_outlined), onPressed: () {}),
-          title: const Text('Изменение языка'),
+          title: Text(tr('changeLanguage', widget.selectedLanguage)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, _selectedLanguage),
-              child: const Text('Готово', style: TextStyle(fontSize: 16)),
+              child: Text(tr('done', widget.selectedLanguage), style: const TextStyle(fontSize: 16)),
             ),
           ],
         ),

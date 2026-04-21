@@ -3,8 +3,9 @@ import 'app_background.dart';
 
 class CompetitorRatesScreen extends StatefulWidget {
   final List<Map<String, String>> aiuBankRates;
+  final String selectedLanguage;
 
-  const CompetitorRatesScreen({super.key, required this.aiuBankRates});
+  const CompetitorRatesScreen({super.key, required this.aiuBankRates, required this.selectedLanguage});
 
   @override
   State<CompetitorRatesScreen> createState() => _CompetitorRatesScreenState();

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'news_service.dart';
 
 class NewsScreen extends StatefulWidget {
-  const NewsScreen({super.key});
+  final String selectedLanguage;
+
+  const NewsScreen({super.key, required this.selectedLanguage});
 
   @override
   State<NewsScreen> createState() => _NewsScreenState();

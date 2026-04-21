@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app_background.dart';
+import 'translations.dart';
 
 final _supabase = Supabase.instance.client;
 
 class AuthScreen extends StatefulWidget {
   final bool isLegalEntity;
-  const AuthScreen({super.key, required this.isLegalEntity});
+  final String selectedLanguage;
+
+  const AuthScreen({super.key, required this.isLegalEntity, required this.selectedLanguage});
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
@@ -57,7 +60,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
 
   Future<void> _login() async {
     if (_emailCtrl.text.trim().isEmpty || _passCtrl.text.isEmpty) {
-      _showError('Заполните все поля');
+      _showError(tr('fillAllFields', widget.selectedLanguage));
       return;
     }
     setState(() => _loading = true);
@@ -73,7 +76,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
     } on AuthException catch (e) {
       _showError(e.message);
     } catch (_) {
-      _showError('Ошибка входа. Попробуйте снова.');
+      _showError(tr('loginError', widget.selectedLanguage));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -81,15 +84,15 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
 
   Future<void> _register() async {
     if (_emailCtrl.text.trim().isEmpty || _passCtrl.text.isEmpty) {
-      _showError('Заполните все поля');
+      _showError(tr('fillAllFields', widget.selectedLanguage));
       return;
     }
     if (_passCtrl.text != _confirmPassCtrl.text) {
-      _showError('Пароли не совпадают');
+      _showError(tr('passwordMismatch', widget.selectedLanguage));
       return;
     }
     if (_passCtrl.text.length < 6) {
-      _showError('Пароль минимум 6 символов');
+      _showError(tr('passwordMinLength', widget.selectedLanguage));
       return;
     }
     setState(() => _loading = true);
@@ -100,13 +103,13 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         data: {'is_legal_entity': widget.isLegalEntity},
       );
       if (mounted) {
-        _showSuccess('Письмо подтверждения отправлено на ${_emailCtrl.text.trim()}');
+        _showSuccess('${tr('emailConfirmationSent', widget.selectedLanguage)} ${_emailCtrl.text.trim()}');
         _tabController.animateTo(0);
       }
     } on AuthException catch (e) {
       _showError(e.message);
     } catch (_) {
-      _showError('Ошибка регистрации. Попробуйте снова.');
+      _showError(tr('registerError', widget.selectedLanguage));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -115,13 +118,13 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
   Future<void> _forgotPassword() async {
     final email = _emailCtrl.text.trim();
     if (email.isEmpty) {
-      _showError('Введите email для сброса пароля');
+      _showError(tr('enterEmailForReset', widget.selectedLanguage));
       return;
     }
     setState(() => _loading = true);
     try {
       await _supabase.auth.resetPasswordForEmail(email);
-      if (mounted) _showSuccess('Письмо для сброса пароля отправлено на $email');
+      if (mounted) _showSuccess('${tr('passwordResetEmailSent', widget.selectedLanguage)} $email');
     } on AuthException catch (e) {
       _showError(e.message);
     } finally {
@@ -136,13 +139,16 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
-          title: Text(widget.isLegalEntity ? 'Aiu Bank' : 'Личный кабинет'),
+          title: Text(widget.isLegalEntity ? 'Aiu Bank' : tr('personalCabinet', widget.selectedLanguage)),
           bottom: TabBar(
             controller: _tabController,
             indicatorColor: _color,
             labelColor: _color,
             unselectedLabelColor: Colors.white54,
-            tabs: const [Tab(text: 'Вход'), Tab(text: 'Регистрация')],
+            tabs: [
+              Tab(text: tr('login', widget.selectedLanguage)),
+              Tab(text: tr('register', widget.selectedLanguage)),
+            ],
           ),
         ),
         body: TabBarView(
@@ -163,21 +169,21 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           const SizedBox(height: 32),
           _emailField(),
           const SizedBox(height: 16),
-          _passwordField(_passCtrl, 'Пароль'),
+          _passwordField(_passCtrl, tr('password', widget.selectedLanguage)),
           const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: _loading ? null : _forgotPassword,
-              child: Text('Забыли пароль?', style: TextStyle(color: _color)),
+              child: Text(tr('forgotPassword', widget.selectedLanguage), style: TextStyle(color: _color)),
             ),
           ),
           const SizedBox(height: 16),
-          _actionButton('Войти', _login),
+          _actionButton(tr('login', widget.selectedLanguage), _login),
           const SizedBox(height: 16),
           TextButton(
             onPressed: () => _tabController.animateTo(1),
-            child: Text('Нет аккаунта? Зарегистрироваться',
+            child: Text(tr('noAccountSignUp', widget.selectedLanguage),
                 style: TextStyle(color: Colors.white.withOpacity(0.5))),
           ),
         ],
@@ -195,15 +201,15 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
           const SizedBox(height: 32),
           _emailField(),
           const SizedBox(height: 16),
-          _passwordField(_passCtrl, 'Пароль'),
+          _passwordField(_passCtrl, tr('password', widget.selectedLanguage)),
           const SizedBox(height: 16),
-          _passwordField(_confirmPassCtrl, 'Подтвердите пароль'),
+          _passwordField(_confirmPassCtrl, tr('confirmPassword', widget.selectedLanguage)),
           const SizedBox(height: 24),
-          _actionButton('Зарегистрироваться', _register),
+          _actionButton(tr('register', widget.selectedLanguage), _register),
           const SizedBox(height: 16),
           TextButton(
             onPressed: () => _tabController.animateTo(0),
-            child: Text('Уже есть аккаунт? Войти',
+            child: Text(tr('alreadyHaveAccount', widget.selectedLanguage),
                 style: TextStyle(color: Colors.white.withOpacity(0.5))),
           ),
         ],
@@ -238,7 +244,7 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
       keyboardType: TextInputType.emailAddress,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
-        hintText: 'Email',
+        hintText: tr('email', widget.selectedLanguage),
         hintStyle: const TextStyle(color: Colors.white38),
         prefixIcon: const Icon(Icons.email_outlined, color: Colors.white38),
         filled: true,

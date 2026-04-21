@@ -5,8 +5,9 @@ import 'app_background.dart';
 
 class RiskNotificationsScreen extends StatefulWidget {
   final List<RiskAlert> alerts;
+  final String selectedLanguage;
 
-  const RiskNotificationsScreen({super.key, required this.alerts});
+  const RiskNotificationsScreen({super.key, required this.alerts, required this.selectedLanguage});
 
   @override
   State<RiskNotificationsScreen> createState() => _RiskNotificationsScreenState();

@@ -236,7 +236,7 @@ class _ConverterScreenState extends State<ConverterScreen> {
                       controller: _debugController,
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
-                        hintText: 'Напр: 500 долларов, 1000 евро...',
+                        hintText: tr('exampleInput', widget.selectedLanguage),
                         hintStyle: const TextStyle(color: Colors.white38, fontSize: 13),
                         filled: true,
                         fillColor: Colors.white.withValues(alpha: 0.08),

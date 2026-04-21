@@ -103,7 +103,9 @@ const _mockExchangers = [
 ];
 
 class NearbyExchangersScreen extends StatefulWidget {
-  const NearbyExchangersScreen({super.key});
+  final String selectedLanguage;
+
+  const NearbyExchangersScreen({super.key, required this.selectedLanguage});
 
   @override
   State<NearbyExchangersScreen> createState() => _NearbyExchangersScreenState();

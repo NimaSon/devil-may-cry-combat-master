@@ -228,7 +228,7 @@ class _ExchangersScreenState extends State<ExchangersScreen> with SingleTickerPr
                       ],
                     ),
                     // Таб P2P
-                    P2PScreen(favoriteCurrencies: widget.isLoggedIn ? [] : const ['USD', 'EUR', 'RUB']),
+                    P2PScreen(favoriteCurrencies: widget.isLoggedIn ? [] : const ['USD', 'EUR', 'RUB'], selectedLanguage: widget.selectedLanguage),
                   ],
                 ),
               ),

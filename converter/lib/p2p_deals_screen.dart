@@ -8,7 +8,9 @@ final _supabase = Supabase.instance.client;
 // ─── Экран всех сделок ───────────────────────────────────────────────────────
 
 class P2PDealsScreen extends StatefulWidget {
-  const P2PDealsScreen({super.key});
+  final String selectedLanguage;
+
+  const P2PDealsScreen({super.key, required this.selectedLanguage});
 
   @override
   State<P2PDealsScreen> createState() => _P2PDealsScreenState();
