@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UserService {
   static final _supabase = Supabase.instance.client;
@@ -43,16 +44,56 @@ class UserService {
 
   // Получить избранные валюты
   static Future<List<String>> getFavoriteCurrencies() async {
-    final profile = await getUserProfile();
-    final favorites = profile?['favorite_currencies'];
-    if (favorites is List) {
-      return List<String>.from(favorites);
+    final prefs = await SharedPreferences.getInstance();
+    final localFavorites = prefs.getStringList('favorite_currencies') ?? ['KZT', 'AED', 'INR', 'RUB', 'KRW'];
+
+    final user = _supabase.auth.currentUser;
+    if (user != null) {
+      final profile = await getUserProfile();
+      final serverFavorites = profile?['favorite_currencies'];
+      if (serverFavorites is List && serverFavorites.isNotEmpty) {
+        final serverList = List<String>.from(serverFavorites);
+        // Синхронизировать локально
+        await prefs.setStringList('favorite_currencies', serverList);
+        return serverList;
+      } else {
+        // Если на сервере пусто, загрузить локальные на сервер
+        await setFavoriteCurrencies(localFavorites);
+        return localFavorites;
+      }
     }
-    return ['KZT', 'AED', 'INR', 'RUB', 'KRW']; // дефолт
+    return localFavorites;
   }
 
-  // Установить избранные валюты
-  static Future<void> setFavoriteCurrencies(List<String> currencies) async {
-    await updateUserProfile({'favorite_currencies': currencies});
+  // Получить избранные криптовалюты
+  static Future<List<String>> getFavoriteCrypto() async {
+    final prefs = await SharedPreferences.getInstance();
+    final localFavorites = prefs.getStringList('favorite_crypto') ?? ['BTC'];
+
+    final user = _supabase.auth.currentUser;
+    if (user != null) {
+      final profile = await getUserProfile();
+      final serverFavorites = profile?['favorite_crypto'];
+      if (serverFavorites is List && serverFavorites.isNotEmpty) {
+        final serverList = List<String>.from(serverFavorites);
+        await prefs.setStringList('favorite_crypto', serverList);
+        return serverList;
+      } else {
+        await setFavoriteCrypto(localFavorites);
+        return localFavorites;
+      }
+    }
+    return localFavorites;
+  }
+
+  // Установить избранные криптовалюты
+  static Future<void> setFavoriteCrypto(List<String> currencies) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('favorite_crypto', currencies);
+
+    final user = _supabase.auth.currentUser;
+    if (user != null) {
+      await updateUserProfile({'favorite_crypto': currencies});
+    }
   }
 }

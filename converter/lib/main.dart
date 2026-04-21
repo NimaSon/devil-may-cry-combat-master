@@ -12,6 +12,7 @@ import 'trading_chart_screen.dart';
 import 'risk_service.dart';
 import 'forecast_screen.dart';
 import 'l10n_service.dart';
+import 'user_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -139,8 +140,17 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     _loadRates();
-
+    _loadFavorites();
     _testSupabaseConnection();
+  }
+
+  Future<void> _loadFavorites() async {
+    final favCurr = await UserService.getFavoriteCurrencies();
+    final favCrypto = await UserService.getFavoriteCrypto();
+    setState(() {
+      favoriteCurrencies = favCurr;
+      favoriteCrypto = favCrypto;
+    });
   }
 
   Future<void> _loadRates() async {
@@ -243,6 +253,8 @@ class _MainScreenState extends State<MainScreen> {
         favoriteCurrencies = result['currencies'];
         favoriteCrypto = result['crypto'];
       });
+      await UserService.setFavoriteCurrencies(favoriteCurrencies);
+      await UserService.setFavoriteCrypto(favoriteCrypto);
     }
   }
 
