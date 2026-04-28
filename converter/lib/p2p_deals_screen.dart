@@ -78,15 +78,23 @@ class _P2PDealsScreenState extends State<P2PDealsScreen> with SingleTickerProvid
 
   Future<void> _updateWallet(String userId, String currency, double delta) async {
     try {
-      final res = await _supabase.from('wallets').select().eq('user_id', userId).maybeSingle();
-      if (res == null) {
-        await _supabase.from('wallets').upsert({'user_id': userId, 'kzt': 0, 'usd': 0, 'eur': 0, 'rub': 0});
-        return;
-      }
-      final current = (res[currency] ?? 0).toDouble();
+      await _supabase.from('wallets').upsert(
+        {'user_id': userId, 'currency_code': currency.toUpperCase(), 'balance': 0},
+        onConflict: 'user_id,currency_code',
+      );
+      final res = await _supabase
+          .from('wallets')
+          .select('balance')
+          .eq('user_id', userId)
+          .eq('currency_code', currency.toUpperCase())
+          .single();
+      final current = (res['balance'] as num).toDouble();
       final newVal = (current + delta).clamp(0.0, double.infinity);
-      await _supabase.from('wallets').update({currency: newVal}).eq('user_id', userId);
-      print('WALLET OK: userId=$userId $currency $current -> $newVal');
+      await _supabase
+          .from('wallets')
+          .update({'balance': newVal})
+          .eq('user_id', userId)
+          .eq('currency_code', currency.toUpperCase());
     } catch (e) {
       print('WALLET ERROR: $e');
     }

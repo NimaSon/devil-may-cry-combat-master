@@ -35,11 +35,30 @@ CREATE TABLE p2p_deals (
     status VARCHAR(20) DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
 ALTER TABLE p2p_deals ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view their deals" ON p2p_deals FOR SELECT USING (auth.uid() = seller_id OR auth.uid() = buyer_id);
 CREATE POLICY "Users can insert deals" ON p2p_deals FOR INSERT WITH CHECK (auth.uid() = buyer_id);
 CREATE POLICY "Users can update their deals" ON p2p_deals FOR UPDATE USING (auth.uid() = seller_id OR auth.uid() = buyer_id);
+
+-- 0b. Создаём таблицу сообщений чата
+DROP TABLE IF EXISTS messages CASCADE;
+CREATE TABLE messages (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    deal_id UUID NOT NULL REFERENCES p2p_deals(id) ON DELETE CASCADE,
+    sender_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    sender_username TEXT,
+    text TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Deal participants can view messages" ON messages FOR SELECT USING (
+    EXISTS (SELECT 1 FROM p2p_deals WHERE id = deal_id AND (seller_id = auth.uid() OR buyer_id = auth.uid()))
+);
+CREATE POLICY "Deal participants can insert messages" ON messages FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM p2p_deals WHERE id = deal_id AND (seller_id = auth.uid() OR buyer_id = auth.uid()))
+);
+CREATE INDEX IF NOT EXISTS idx_messages_deal_id ON messages(deal_id);
+ALTER PUBLICATION supabase_realtime ADD TABLE messages;
 
 -- 1. Создаём функцию для обновления баланса кошелька при транзакциях
 CREATE OR REPLACE FUNCTION update_wallet_balance()
