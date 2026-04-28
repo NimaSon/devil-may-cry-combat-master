@@ -8,7 +8,9 @@ import 'user_service.dart';
 import 'l10n_service.dart';
 
 class ConverterScreen extends StatefulWidget {
-  const ConverterScreen({super.key});
+  final String selectedLanguage;
+
+  const ConverterScreen({super.key, required this.selectedLanguage});
 
   @override
   State<ConverterScreen> createState() => _ConverterScreenState();

@@ -275,9 +275,9 @@ class _MainScreenState extends State<MainScreen> {
                 aiuBankRates: aiuBankRates,
                 rateHistory: rateHistory,
               )
-            : const CryptoScreen();
+            : CryptoScreen(selectedLanguage: L10n.locale.languageCode);
       case 3:
-        return const ConverterScreen();
+        return ConverterScreen(selectedLanguage: L10n.locale.languageCode);
       case 4:
         return OtherScreen(
           selectedCountry: selectedCountry,

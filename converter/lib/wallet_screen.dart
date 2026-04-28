@@ -37,18 +37,34 @@ class _WalletScreenState extends State<WalletScreen> {
       return;
     }
     try {
-      final res = await _supabase.from('wallets').select().eq('user_id', uid).maybeSingle();
-      if (res == null) {
-        await _supabase.from('wallets').insert({'user_id': uid});
-      } else {
-        _balance = {
-          'kzt': (res['kzt'] ?? 0).toDouble(),
-          'usd': (res['usd'] ?? 0).toDouble(),
-          'eur': (res['eur'] ?? 0).toDouble(),
-          'rub': (res['rub'] ?? 0).toDouble(),
-        };
+      // Получаем балансы для всех валют
+      final res = await _supabase.from('wallets').select('currency_code, balance').eq('user_id', uid);
+      _balance = {'kzt': 0, 'usd': 0, 'eur': 0, 'rub': 0};
+      for (final wallet in res) {
+        final currency = wallet['currency_code'].toString().toLowerCase();
+        if (_balance.containsKey(currency)) {
+          _balance[currency] = (wallet['balance'] ?? 0).toDouble();
+        }
       }
-    } catch (_) {}
+    } catch (e) {
+      // Если таблица wallets не существует или ошибка, используем старый формат
+      try {
+        final res = await _supabase.from('wallets').select().eq('user_id', uid).maybeSingle();
+        if (res == null) {
+          await _supabase.from('wallets').insert({'user_id': uid});
+        } else {
+          _balance = {
+            'kzt': (res['kzt'] ?? 0).toDouble(),
+            'usd': (res['usd'] ?? 0).toDouble(),
+            'eur': (res['eur'] ?? 0).toDouble(),
+            'rub': (res['rub'] ?? 0).toDouble(),
+          };
+        }
+      } catch (e2) {
+        // Если ничего не работает, используем пустой баланс
+        _balance = {'kzt': 0, 'usd': 0, 'eur': 0, 'rub': 0};
+      }
+    }
   }
 
   Future<void> _loadTransactions() async {
@@ -85,16 +101,91 @@ class _WalletScreenState extends State<WalletScreen> {
   Future<void> _addTransaction(String type, double amount, String currency, String method) async {
     final uid = _supabase.auth.currentUser?.id;
     if (uid == null) return;
-    final tx = {
-      'user_id': uid,
-      'type': type,
-      'amount': amount,
-      'currency': currency,
-      'method': method,
-      'status': 'completed',
-    };
-    final res = await _supabase.from('transactions').insert(tx).select().single();
-    setState(() => _transactions.insert(0, res));
+
+    try {
+      // Используем функцию базы данных для безопасного обновления
+      final result = await _supabase.rpc(
+        type == 'deposit' ? 'deposit_wallet' : 'withdraw_wallet',
+        params: {
+          'p_user_uuid': uid,
+          'p_amount': amount,
+          'p_currency_code': currency,
+          'p_payment_method': method,
+        }
+      );
+
+      if (result['success'] == true) {
+        // Обновляем локальный баланс
+        setState(() {
+          final currencyKey = currency.toLowerCase();
+          if (_balance.containsKey(currencyKey)) {
+            if (type == 'deposit') {
+              _balance[currencyKey] = (_balance[currencyKey] ?? 0) + amount;
+            } else {
+              _balance[currencyKey] = (_balance[currencyKey] ?? 0) - amount;
+            }
+          }
+        });
+
+        // Перезагружаем транзакции
+        await _loadTransactions();
+
+        // Показываем сообщение об успехе
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Операция выполнена успешно'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        // Показываем ошибку
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Ошибка при выполнении операции'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Fallback: используем старый метод вставки напрямую
+      try {
+        final tx = {
+          'user_id': uid,
+          'type': type,
+          'amount': amount,
+          'currency': currency,
+          'method': method,
+          'status': 'completed',
+        };
+        final res = await _supabase.from('transactions').insert(tx).select().single();
+        setState(() => _transactions.insert(0, res));
+
+        // Обновляем баланс локально
+        setState(() {
+          final currencyKey = currency.toLowerCase();
+          if (_balance.containsKey(currencyKey)) {
+            if (type == 'deposit') {
+              _balance[currencyKey] = (_balance[currencyKey] ?? 0) + amount;
+            } else {
+              _balance[currencyKey] = (_balance[currencyKey] ?? 0) - amount;
+            }
+          }
+        });
+      } catch (fallbackError) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Ошибка при выполнении операции'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 
   void _showDeposit() {
@@ -135,9 +226,7 @@ class _WalletScreenState extends State<WalletScreen> {
                   final amount = double.tryParse(amountCtrl.text.replaceAll(',', '.'));
                   if (amount == null || amount <= 0) return;
                   Navigator.pop(ctx);
-                  await _updateBalance(currency.toLowerCase(), amount);
                   await _addTransaction('deposit', amount, currency, method);
-                  _showSnack('Баланс пополнен на ${amount.toStringAsFixed(2)} $currency', const Color(0xFF00C853));
                 }),
               ],
             ),
@@ -237,9 +326,7 @@ class _WalletScreenState extends State<WalletScreen> {
                   }
                   final card = _cards.firstWhere((c) => c['id'] == selectedCardId);
                   Navigator.pop(ctx);
-                  await _updateBalance(currency.toLowerCase(), -amount);
                   await _addTransaction('withdraw', amount, currency, card['bank']);
-                  _showSnack('Выведено ${amount.toStringAsFixed(2)} $currency на ${card['bank']}', const Color(0xFFFF1744));
                 }),
               ],
             ),

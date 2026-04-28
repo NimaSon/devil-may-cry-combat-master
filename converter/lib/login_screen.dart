@@ -56,7 +56,7 @@ class LoginScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => AuthScreen(isLegalEntity: false, selectedLanguage: selectedLanguage),
+                    builder: (context) => AuthScreen(isLegalEntity: false),
                   ),
                 );
               },
@@ -80,7 +80,7 @@ class LoginScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => AuthScreen(isLegalEntity: true, selectedLanguage: selectedLanguage),
+                    builder: (context) => AuthScreen(isLegalEntity: true),
                   ),
                 );
               },

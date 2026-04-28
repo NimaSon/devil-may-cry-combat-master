@@ -70,11 +70,21 @@ class OtherScreen extends StatelessWidget {
             }),
           if (!isLegalEntity)
             _buildMenuItem(Icons.handshake_outlined, tr('myP2PDeals', L10n.locale.languageCode), () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const P2PDealsScreen()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => P2PDealsScreen(selectedLanguage: L10n.locale.languageCode),
+                ),
+              );
             }),
           if (!isLegalEntity)
             _buildMenuItem(Icons.location_on, tr('nearbyExchangers', L10n.locale.languageCode), () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const NearbyExchangersScreen()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => NearbyExchangersScreen(selectedLanguage: L10n.locale.languageCode),
+                ),
+              );
             }),
           if (isLoggedIn && isLegalEntity)
             _buildMenuItem(Icons.show_chart, tr('tradingChart', L10n.locale.languageCode), () {
@@ -82,22 +92,39 @@ class OtherScreen extends StatelessWidget {
             }),
           if (!isLegalEntity)
             _buildMenuItem(Icons.newspaper, tr('economicNews', L10n.locale.languageCode), () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const NewsScreen()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => NewsScreen(selectedLanguage: L10n.locale.languageCode),
+                ),
+              );
             }),
           if (!isLegalEntity)
             _buildMenuItem(Icons.auto_graph, tr('forecastRate', L10n.locale.languageCode), () {
-              Navigator.push(context, MaterialPageRoute(
-                builder: (context) => ForecastViewScreen(forecasts: bankForecasts, aiuBankRates: aiuBankRates, rateHistory: rateHistory),
-              ));
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ForecastViewScreen(
+                    forecasts: bankForecasts,
+                    aiuBankRates: aiuBankRates,
+                    rateHistory: rateHistory,
+                    selectedLanguage: L10n.locale.languageCode,
+                  ),
+                ),
+              );
             }),
           if (isLoggedIn && isLegalEntity)
             _buildMenuItem(Icons.auto_graph, tr('forecastManage', L10n.locale.languageCode), () {
-              Navigator.push(context, MaterialPageRoute(
-                builder: (context) => ForecastManageScreen(
-                  forecasts: bankForecasts,
-                  onSave: onForecastsUpdate,
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ForecastManageScreen(
+                    forecasts: bankForecasts,
+                    onSave: onForecastsUpdate,
+                    selectedLanguage: L10n.locale.languageCode,
+                  ),
                 ),
-              ));
+              );
             }),
           _buildMenuItem(Icons.settings, tr('settings', L10n.locale.languageCode), () {
             Navigator.push(
@@ -115,7 +142,10 @@ class OtherScreen extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => CompetitorRatesScreen(aiuBankRates: aiuBankRates),
+                  builder: (context) => CompetitorRatesScreen(
+                    aiuBankRates: aiuBankRates,
+                    selectedLanguage: L10n.locale.languageCode,
+                  ),
                 ),
               );
             }),
@@ -127,6 +157,7 @@ class OtherScreen extends StatelessWidget {
                   builder: (context) => MyExchangerScreen(
                     aiuBankRates: aiuBankRates,
                     onRatesUpdate: onRatesUpdate,
+                    selectedLanguage: L10n.locale.languageCode,
                   ),
                 ),
               );
@@ -136,7 +167,10 @@ class OtherScreen extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => RateHistoryScreen(history: rateHistory),
+                  builder: (context) => RateHistoryScreen(
+                    history: rateHistory,
+                    selectedLanguage: L10n.locale.languageCode,
+                  ),
                 ),
               );
             }),
@@ -147,7 +181,10 @@ class OtherScreen extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => RiskNotificationsScreen(alerts: riskAlerts),
+                  builder: (context) => RiskNotificationsScreen(
+                    alerts: riskAlerts,
+                    selectedLanguage: L10n.locale.languageCode,
+                  ),
                 ),
               );
             }),
@@ -162,7 +199,7 @@ class OtherScreen extends StatelessWidget {
                   final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const LoginScreen(),
+                      builder: (context) => LoginScreen(selectedLanguage: L10n.locale.languageCode),
                     ),
                   );
                   if (result != null && result is bool) {
