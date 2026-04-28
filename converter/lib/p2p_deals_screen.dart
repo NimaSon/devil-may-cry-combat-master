@@ -60,44 +60,9 @@ class _P2PDealsScreenState extends State<P2PDealsScreen> with SingleTickerProvid
   Future<void> _updateStatus(String dealId, String status) async {
     await _supabase.from('p2p_deals').update({'status': status}).eq('id', dealId);
     if (status == 'completed') {
-      final deal = _deals.firstWhere((d) => d['id'] == dealId);
-      final currency = (deal['currency'] as String).toLowerCase();
-      final kztAmount = (deal['amount'] as num).toDouble(); // сумма в KZT которую платит покупатель
-      final price = (deal['price'] as num).toDouble(); // курс за 1 единицу валюты
-      final currencyAmount = kztAmount / price; // сколько валюты получает покупатель
-      print('DEAL: kzt=$kztAmount price=$price currency=$currencyAmount');
-      // Продавец: отдаёт валюту, получает KZT
-      await _updateWallet(deal['seller_id'], currency, -currencyAmount);
-      await _updateWallet(deal['seller_id'], 'kzt', kztAmount);
-      // Покупатель: отдаёт KZT, получает валюту
-      await _updateWallet(deal['buyer_id'], 'kzt', -kztAmount);
-      await _updateWallet(deal['buyer_id'], currency, currencyAmount);
+      await _supabase.rpc('complete_p2p_deal', params: {'p_deal_id': dealId});
     }
     _loadDeals();
-  }
-
-  Future<void> _updateWallet(String userId, String currency, double delta) async {
-    try {
-      await _supabase.from('wallets').upsert(
-        {'user_id': userId, 'currency_code': currency.toUpperCase(), 'balance': 0},
-        onConflict: 'user_id,currency_code',
-      );
-      final res = await _supabase
-          .from('wallets')
-          .select('balance')
-          .eq('user_id', userId)
-          .eq('currency_code', currency.toUpperCase())
-          .single();
-      final current = (res['balance'] as num).toDouble();
-      final newVal = (current + delta).clamp(0.0, double.infinity);
-      await _supabase
-          .from('wallets')
-          .update({'balance': newVal})
-          .eq('user_id', userId)
-          .eq('currency_code', currency.toUpperCase());
-    } catch (e) {
-      print('WALLET ERROR: $e');
-    }
   }
 
   @override

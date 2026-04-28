@@ -60,6 +60,44 @@ CREATE POLICY "Deal participants can insert messages" ON messages FOR INSERT WIT
 CREATE INDEX IF NOT EXISTS idx_messages_deal_id ON messages(deal_id);
 ALTER PUBLICATION supabase_realtime ADD TABLE messages;
 
+-- 0c. Функция расчёта кошельков при завершении P2P сделки (SECURITY DEFINER обходит RLS)
+CREATE OR REPLACE FUNCTION complete_p2p_deal(p_deal_id UUID)
+RETURNS VOID AS $$
+DECLARE
+    deal RECORD;
+    currency_upper TEXT;
+    kzt_amount DECIMAL;
+    currency_amount DECIMAL;
+BEGIN
+    SELECT * INTO deal FROM p2p_deals WHERE id = p_deal_id;
+    IF NOT FOUND THEN RETURN; END IF;
+
+    currency_upper := UPPER(deal.currency);
+    kzt_amount     := deal.amount;
+    currency_amount := kzt_amount / deal.price;
+
+    -- Продавец: отдаёт валюту, получает KZT
+    INSERT INTO wallets (user_id, currency_code, balance) VALUES (deal.seller_id, currency_upper, 0)
+        ON CONFLICT (user_id, currency_code) DO NOTHING;
+    INSERT INTO wallets (user_id, currency_code, balance) VALUES (deal.seller_id, 'KZT', 0)
+        ON CONFLICT (user_id, currency_code) DO NOTHING;
+    UPDATE wallets SET balance = GREATEST(0, balance - currency_amount)
+        WHERE user_id = deal.seller_id AND currency_code = currency_upper;
+    UPDATE wallets SET balance = balance + kzt_amount
+        WHERE user_id = deal.seller_id AND currency_code = 'KZT';
+
+    -- Покупатель: отдаёт KZT, получает валюту
+    INSERT INTO wallets (user_id, currency_code, balance) VALUES (deal.buyer_id, 'KZT', 0)
+        ON CONFLICT (user_id, currency_code) DO NOTHING;
+    INSERT INTO wallets (user_id, currency_code, balance) VALUES (deal.buyer_id, currency_upper, 0)
+        ON CONFLICT (user_id, currency_code) DO NOTHING;
+    UPDATE wallets SET balance = GREATEST(0, balance - kzt_amount)
+        WHERE user_id = deal.buyer_id AND currency_code = 'KZT';
+    UPDATE wallets SET balance = balance + currency_amount
+        WHERE user_id = deal.buyer_id AND currency_code = currency_upper;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- 1. Создаём функцию для обновления баланса кошелька при транзакциях
 CREATE OR REPLACE FUNCTION update_wallet_balance()
 RETURNS TRIGGER AS $$
