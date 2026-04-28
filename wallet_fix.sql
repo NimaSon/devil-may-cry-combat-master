@@ -1,6 +1,46 @@
 -- SQL код для исправления проблемы с пополнением кошелька
 -- Проблема: при пополнении деньги не добавляются к балансу кошелька
 
+-- 0. Пересоздаём p2p_offers и p2p_deals с UUID первичными ключами
+DROP TABLE IF EXISTS p2p_deals CASCADE;
+DROP TABLE IF EXISTS p2p_offers CASCADE;
+CREATE TABLE p2p_offers (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    username TEXT,
+    type VARCHAR(10) NOT NULL,
+    currency VARCHAR(10) NOT NULL,
+    price DECIMAL(20, 10) NOT NULL,
+    limit_min DECIMAL(20, 10),
+    limit_max DECIMAL(20, 10),
+    available DECIMAL(20, 10),
+    pay_methods JSONB DEFAULT '[]',
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+ALTER TABLE p2p_offers ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone can view active offers" ON p2p_offers FOR SELECT USING (true);
+CREATE POLICY "Users can insert own offers" ON p2p_offers FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own offers" ON p2p_offers FOR UPDATE USING (auth.uid() = user_id);
+CREATE TABLE p2p_deals (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    offer_id UUID,
+    seller_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    buyer_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    seller_username TEXT,
+    buyer_username TEXT,
+    currency VARCHAR(10),
+    price DECIMAL(20, 10),
+    amount DECIMAL(20, 10) NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE p2p_deals ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view their deals" ON p2p_deals FOR SELECT USING (auth.uid() = seller_id OR auth.uid() = buyer_id);
+CREATE POLICY "Users can insert deals" ON p2p_deals FOR INSERT WITH CHECK (auth.uid() = buyer_id);
+CREATE POLICY "Users can update their deals" ON p2p_deals FOR UPDATE USING (auth.uid() = seller_id OR auth.uid() = buyer_id);
+
 -- 1. Создаём функцию для обновления баланса кошелька при транзакциях
 CREATE OR REPLACE FUNCTION update_wallet_balance()
 RETURNS TRIGGER AS $$
