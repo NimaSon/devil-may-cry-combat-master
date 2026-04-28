@@ -101,6 +101,9 @@ BEGIN
     VALUES (deal.buyer_id, 'deposit',  currency_amount, currency_upper, 'P2P', 'completed', 'P2P покупка ' || round(currency_amount::NUMERIC, 6)::TEXT || ' ' || currency_upper || ' у ' || deal.seller_username);
     INSERT INTO transactions (user_id, type, amount, currency, method, status, description)
     VALUES (deal.buyer_id, 'withdraw', kzt_amount,      'KZT',         'P2P', 'completed', 'P2P покупка ' || round(currency_amount::NUMERIC, 6)::TEXT || ' ' || currency_upper || ' у ' || deal.seller_username);
+
+    -- Удаляем сделку из БД
+    DELETE FROM p2p_deals WHERE id = p_deal_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

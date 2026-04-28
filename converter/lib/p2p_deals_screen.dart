@@ -55,12 +55,14 @@ class _P2PDealsScreenState extends State<P2PDealsScreen> with SingleTickerProvid
       _deals.where((d) => d['seller_id'] == _uid && d['status'] == 'pending').toList();
 
   List<Map<String, dynamic>> get _active =>
-      _deals.where((d) => d['status'] != 'pending' || d['buyer_id'] == _uid).toList();
+      _deals.where((d) => d['status'] == 'pending').toList();
 
   Future<void> _updateStatus(String dealId, String status) async {
-    await _supabase.from('p2p_deals').update({'status': status}).eq('id', dealId);
     if (status == 'completed') {
+      await _supabase.from('p2p_deals').update({'status': status}).eq('id', dealId);
       await _supabase.rpc('complete_p2p_deal', params: {'p_deal_id': dealId});
+    } else if (status == 'cancelled') {
+      await _supabase.from('p2p_deals').delete().eq('id', dealId);
     }
     _loadDeals();
   }
