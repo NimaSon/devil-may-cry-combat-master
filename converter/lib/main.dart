@@ -13,6 +13,8 @@ import 'risk_service.dart';
 import 'forecast_screen.dart';
 import 'l10n_service.dart';
 import 'user_service.dart';
+import 'auth_screen.dart';
+import 'login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -100,10 +102,19 @@ class _MyAppState extends State<MyApp> {
         ),
         iconTheme: const IconThemeData(color: Colors.white70),
       ),
-      home: const MainScreen(),
+      home: const AuthGate(),
         );
       },
     );
+  }
+}
+
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const LoginScreen(selectedLanguage: 'ru');
   }
 }
 
@@ -117,11 +128,12 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
   String selectedCountry = 'KZT';
-  bool isLoggedIn = false;
   bool isLegalEntity = false;
   Map<String, double> exchangeRates = {};
   List<String> favoriteCurrencies = ['USD', 'EUR', 'RUB'];
   List<String> favoriteCrypto = ['BTC'];
+
+  bool get isLoggedIn => Supabase.instance.client.auth.currentUser != null;
   
   List<Map<String, String>> aiuBankRates = [
     {'flag': '🇺🇸', 'buy': '480', 'sell': '488'},
@@ -141,7 +153,10 @@ class _MainScreenState extends State<MainScreen> {
     super.initState();
     _loadRates();
     _loadFavorites();
-    _testSupabaseConnection();
+    // Слушаем изменения сессии — обновляем UI при входе/выходе
+    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      if (mounted) setState(() {});
+    });
   }
 
   Future<void> _loadFavorites() async {
@@ -158,21 +173,6 @@ class _MainScreenState extends State<MainScreen> {
     setState(() {
       exchangeRates = rates;
     });
-  }
-
-  Future<void> _testSupabaseConnection() async {
-    try {
-      // Пробуем просто обратиться к клиенту Supabase (чтобы инициализациялась)
-      final response = Supabase.instance.client;
-      if (response != null) {
-        print("✅ Supabase успешно инициализирован");
-      }
-      // В Supabase 2.x URL доступен через options (если нужна трассировка): response.options.url
-      // print("Supabase URL: ${response.options.url}");
-    } catch (e) {
-      print("❌ Ошибка подключения к Supabase: $e");
-      print("Проверь файл .env и наличие интернета");
-    }
   }
 
   void _onRatesUpdate(List<Map<String, String>> newRates) {
@@ -298,13 +298,11 @@ class _MainScreenState extends State<MainScreen> {
           },
           onLogin: (bool isLegal) {
             setState(() {
-              isLoggedIn = true;
               isLegalEntity = isLegal;
             });
           },
           onLogout: () {
             setState(() {
-              isLoggedIn = false;
               isLegalEntity = false;
             });
           },

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'settings_screen.dart';
 import 'translations.dart';
 import 'login_screen.dart';
@@ -194,7 +195,13 @@ class OtherScreen extends StatelessWidget {
             child: ElevatedButton(
               onPressed: () async {
                 if (isLoggedIn) {
+                  await Supabase.instance.client.auth.signOut();
                   onLogout();
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen(selectedLanguage: 'ru')),
+                    (_) => false,
+                  );
                 } else {
                   final result = await Navigator.push(
                     context,

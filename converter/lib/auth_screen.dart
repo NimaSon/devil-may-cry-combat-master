@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app_background.dart';
 import 'l10n_service.dart';
+import 'main.dart';
 
 final _supabase = Supabase.instance.client;
 
@@ -68,8 +69,11 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         password: _passCtrl.text,
       );
       if (mounted) {
-        Navigator.pop(context, widget.isLegalEntity);
-        Navigator.pop(context, widget.isLegalEntity);
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const MainScreen()),
+          (_) => false,
+        );
       }
     } on AuthException catch (e) {
       _showError(e.message);
