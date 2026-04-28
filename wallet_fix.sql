@@ -60,7 +60,7 @@ CREATE POLICY "Deal participants can insert messages" ON messages FOR INSERT WIT
 CREATE INDEX IF NOT EXISTS idx_messages_deal_id ON messages(deal_id);
 ALTER PUBLICATION supabase_realtime ADD TABLE messages;
 
--- 0c. Функция расчёта кошельков при завершении P2P сделки (SECURITY DEFINER обходит RLS)
+-- 0c. Функция завершения P2P сделки (SECURITY DEFINER обходит RLS)
 CREATE OR REPLACE FUNCTION complete_p2p_deal(p_deal_id UUID)
 RETURNS VOID AS $$
 DECLARE
@@ -72,49 +72,42 @@ BEGIN
     SELECT * INTO deal FROM p2p_deals WHERE id = p_deal_id;
     IF NOT FOUND THEN RETURN; END IF;
 
-    currency_upper := UPPER(deal.currency);
-    kzt_amount     := deal.amount;
+    currency_upper  := UPPER(deal.currency);
+    kzt_amount      := deal.amount;
     currency_amount := kzt_amount / deal.price;
 
-    -- Продавец: отдаёт валюту, получает KZT
-    INSERT INTO wallets (user_id, currency_code, balance) VALUES (deal.seller_id, currency_upper, 0)
-        ON CONFLICT (user_id, currency_code) DO NOTHING;
-    INSERT INTO wallets (user_id, currency_code, balance) VALUES (deal.seller_id, 'KZT', 0)
-        ON CONFLICT (user_id, currency_code) DO NOTHING;
-    UPDATE wallets SET balance = GREATEST(0, balance - currency_amount)
-        WHERE user_id = deal.seller_id AND currency_code = currency_upper;
-    UPDATE wallets SET balance = balance + kzt_amount
-        WHERE user_id = deal.seller_id AND currency_code = 'KZT';
+    -- Создаём строки кошельков если не существуют
+    INSERT INTO wallets (user_id, currency_code, balance) VALUES (deal.seller_id, currency_upper, 0) ON CONFLICT (user_id, currency_code) DO NOTHING;
+    INSERT INTO wallets (user_id, currency_code, balance) VALUES (deal.seller_id, 'KZT', 0)          ON CONFLICT (user_id, currency_code) DO NOTHING;
+    INSERT INTO wallets (user_id, currency_code, balance) VALUES (deal.buyer_id,  'KZT', 0)          ON CONFLICT (user_id, currency_code) DO NOTHING;
+    INSERT INTO wallets (user_id, currency_code, balance) VALUES (deal.buyer_id,  currency_upper, 0) ON CONFLICT (user_id, currency_code) DO NOTHING;
 
-    -- Покупатель: отдаёт KZT, получает валюту
-    INSERT INTO wallets (user_id, currency_code, balance) VALUES (deal.buyer_id, 'KZT', 0)
-        ON CONFLICT (user_id, currency_code) DO NOTHING;
-    INSERT INTO wallets (user_id, currency_code, balance) VALUES (deal.buyer_id, currency_upper, 0)
-        ON CONFLICT (user_id, currency_code) DO NOTHING;
-    UPDATE wallets SET balance = GREATEST(0, balance - kzt_amount)
-        WHERE user_id = deal.buyer_id AND currency_code = 'KZT';
-    UPDATE wallets SET balance = balance + currency_amount
-        WHERE user_id = deal.buyer_id AND currency_code = currency_upper;
+    -- Продавец: -валюта, +KZT
+    UPDATE wallets SET balance = GREATEST(0, balance - currency_amount) WHERE user_id = deal.seller_id AND currency_code = currency_upper;
+    UPDATE wallets SET balance = balance + kzt_amount                   WHERE user_id = deal.seller_id AND currency_code = 'KZT';
 
-    -- Записываем транзакции для продавца: получил KZT, отдал валюту
-    INSERT INTO transactions (user_id, type, amount, currency, method, status, description)
-    VALUES (deal.seller_id, 'deposit', kzt_amount, 'KZT', 'P2P', 'completed',
-        'P2P продажа ' || currency_amount::TEXT || ' ' || currency_upper || ' покупателю ' || deal.buyer_username);
-    INSERT INTO transactions (user_id, type, amount, currency, method, status, description)
-    VALUES (deal.seller_id, 'withdraw', currency_amount, currency_upper, 'P2P', 'completed',
-        'P2P продажа ' || currency_amount::TEXT || ' ' || currency_upper || ' покупателю ' || deal.buyer_username);
+    -- Покупатель: -KZT, +валюта
+    UPDATE wallets SET balance = GREATEST(0, balance - kzt_amount)      WHERE user_id = deal.buyer_id AND currency_code = 'KZT';
+    UPDATE wallets SET balance = balance + currency_amount              WHERE user_id = deal.buyer_id AND currency_code = currency_upper;
 
-    -- Записываем транзакции для покупателя: получил валюту, отдал KZT
+    -- Транзакции продавца (INSERT напрямую, без триггера)
     INSERT INTO transactions (user_id, type, amount, currency, method, status, description)
-    VALUES (deal.buyer_id, 'deposit', currency_amount, currency_upper, 'P2P', 'completed',
-        'P2P покупка ' || currency_amount::TEXT || ' ' || currency_upper || ' у ' || deal.seller_username);
+    VALUES (deal.seller_id, 'deposit',  kzt_amount,      'KZT',         'P2P', 'completed', 'P2P продажа ' || round(currency_amount::NUMERIC, 6)::TEXT || ' ' || currency_upper || ' → ' || deal.buyer_username);
     INSERT INTO transactions (user_id, type, amount, currency, method, status, description)
-    VALUES (deal.buyer_id, 'withdraw', kzt_amount, 'KZT', 'P2P', 'completed',
-        'P2P покупка ' || currency_amount::TEXT || ' ' || currency_upper || ' у ' || deal.seller_username);
+    VALUES (deal.seller_id, 'withdraw', currency_amount, currency_upper, 'P2P', 'completed', 'P2P продажа ' || round(currency_amount::NUMERIC, 6)::TEXT || ' ' || currency_upper || ' → ' || deal.buyer_username);
+
+    -- Транзакции покупателя
+    INSERT INTO transactions (user_id, type, amount, currency, method, status, description)
+    VALUES (deal.buyer_id, 'deposit',  currency_amount, currency_upper, 'P2P', 'completed', 'P2P покупка ' || round(currency_amount::NUMERIC, 6)::TEXT || ' ' || currency_upper || ' у ' || deal.seller_username);
+    INSERT INTO transactions (user_id, type, amount, currency, method, status, description)
+    VALUES (deal.buyer_id, 'withdraw', kzt_amount,      'KZT',         'P2P', 'completed', 'P2P покупка ' || round(currency_amount::NUMERIC, 6)::TEXT || ' ' || currency_upper || ' у ' || deal.seller_username);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 1. Создаём функцию для обновления баланса кошелька при транзакциях
+-- Отключаем триггер update_wallet_balance — баланс теперь обновляется явно в функциях
+DROP TRIGGER IF EXISTS trigger_update_wallet_balance ON transactions;
+
+-- 1. Функция триггера для deposit_wallet/withdraw_wallet (не для P2P)
 CREATE OR REPLACE FUNCTION update_wallet_balance()
 RETURNS TRIGGER AS $$
 BEGIN
