@@ -95,6 +95,22 @@ BEGIN
         WHERE user_id = deal.buyer_id AND currency_code = 'KZT';
     UPDATE wallets SET balance = balance + currency_amount
         WHERE user_id = deal.buyer_id AND currency_code = currency_upper;
+
+    -- Записываем транзакции для продавца: получил KZT, отдал валюту
+    INSERT INTO transactions (user_id, type, amount, currency, method, status, description)
+    VALUES (deal.seller_id, 'deposit', kzt_amount, 'KZT', 'P2P', 'completed',
+        'P2P продажа ' || currency_amount::TEXT || ' ' || currency_upper || ' покупателю ' || deal.buyer_username);
+    INSERT INTO transactions (user_id, type, amount, currency, method, status, description)
+    VALUES (deal.seller_id, 'withdraw', currency_amount, currency_upper, 'P2P', 'completed',
+        'P2P продажа ' || currency_amount::TEXT || ' ' || currency_upper || ' покупателю ' || deal.buyer_username);
+
+    -- Записываем транзакции для покупателя: получил валюту, отдал KZT
+    INSERT INTO transactions (user_id, type, amount, currency, method, status, description)
+    VALUES (deal.buyer_id, 'deposit', currency_amount, currency_upper, 'P2P', 'completed',
+        'P2P покупка ' || currency_amount::TEXT || ' ' || currency_upper || ' у ' || deal.seller_username);
+    INSERT INTO transactions (user_id, type, amount, currency, method, status, description)
+    VALUES (deal.buyer_id, 'withdraw', kzt_amount, 'KZT', 'P2P', 'completed',
+        'P2P покупка ' || currency_amount::TEXT || ' ' || currency_upper || ' у ' || deal.seller_username);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

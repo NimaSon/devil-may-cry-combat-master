@@ -606,6 +606,11 @@ class _WalletScreenState extends State<WalletScreen> {
     final sign = isDeposit ? '+' : '-';
     final date = DateTime.tryParse(tx['created_at'] ?? '');
     final dateStr = date != null ? DateFormat('dd.MM.yyyy HH:mm').format(date) : '';
+    final method = tx['method'] ?? '';
+    final description = tx['description'] as String?;
+    final title = method == 'P2P'
+        ? (isDeposit ? 'P2P получено' : 'P2P отправлено')
+        : (isDeposit ? 'Пополнение' : 'Вывод');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -624,21 +629,22 @@ class _WalletScreenState extends State<WalletScreen> {
               color: color.withOpacity(0.15),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: color, size: 22),
+            child: Icon(method == 'P2P' ? Icons.swap_horiz : icon, color: color, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
                 Text(
-                  isDeposit ? 'Пополнение' : 'Вывод',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
-                ),
-                Text(
-                  '${tx['method'] ?? ''} · $dateStr',
+                  description ?? '$method · $dateStr',
                   style: const TextStyle(fontSize: 11, color: Colors.white38),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
+                if (description != null)
+                  Text(dateStr, style: const TextStyle(fontSize: 10, color: Colors.white24)),
               ],
             ),
           ),
