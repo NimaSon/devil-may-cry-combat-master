@@ -111,22 +111,20 @@ DROP TRIGGER IF EXISTS trigger_update_wallet_balance ON transactions;
 CREATE OR REPLACE FUNCTION update_wallet_balance()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Находим кошелёк пользователя для данной валюты
-    -- Если кошелька нет, создаём его
+    -- P2P транзакции пропускаем — баланс уже обновлён в complete_p2p_deal
+    IF NEW.method = 'P2P' THEN
+        RETURN NEW;
+    END IF;
+
     INSERT INTO wallets (user_id, currency_code, balance)
     VALUES (NEW.user_id, NEW.currency, 0)
     ON CONFLICT (user_id, currency_code) DO NOTHING;
 
-    -- Обновляем баланс в зависимости от типа транзакции
     IF NEW.type = 'deposit' THEN
-        UPDATE wallets
-        SET balance = balance + NEW.amount,
-            updated_at = NOW()
+        UPDATE wallets SET balance = balance + NEW.amount
         WHERE user_id = NEW.user_id AND currency_code = NEW.currency;
     ELSIF NEW.type = 'withdraw' THEN
-        UPDATE wallets
-        SET balance = balance - NEW.amount,
-            updated_at = NOW()
+        UPDATE wallets SET balance = GREATEST(0, balance - NEW.amount)
         WHERE user_id = NEW.user_id AND currency_code = NEW.currency;
     END IF;
 
@@ -134,7 +132,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 2. Создаём триггер, который будет вызывать функцию при вставке транзакции
+-- 2. Создаём триггер
 DROP TRIGGER IF EXISTS trigger_update_wallet_balance ON transactions;
 CREATE TRIGGER trigger_update_wallet_balance
     AFTER INSERT ON transactions
